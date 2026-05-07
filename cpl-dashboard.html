@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>California Penal League — Dashboard</title>
+<style>
+  /* ── Reset & base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f4f4f1; --bg3: #eeede9;
+    --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+    --good: #3b6d11; --warn: #ba7517; --danger: #a32d2d;
+    --radius: 8px; --radius-lg: 12px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+      --text: #f0efe9; --text2: #b4b2a9; --text3: #888780;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+      --good: #7ab83e; --warn: #e8a030; --danger: #e05555;
+    }
+  }
+  body { font-family: var(--font); background: var(--bg3); color: var(--text); min-height: 100vh; }
+
+  /* ── Layout ── */
+  .site-header { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 1rem 1.5rem; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
+  .site-header h1 { font-size: 18px; font-weight: 500; }
+  .site-header .badge { font-size: 11px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 6px; padding: 3px 8px; color: var(--text2); }
+  .refresh-btn { margin-left: auto; background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); }
+  .refresh-btn:hover { background: var(--bg2); }
+  .last-updated { font-size: 11px; color: var(--text3); margin-left: 8px; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.25rem; }
+
+  /* ── Loading / error ── */
+  .status-bar { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; text-align: center; color: var(--text2); font-size: 14px; margin-bottom: 1.5rem; }
+  .status-bar.error { border-color: var(--danger); color: var(--danger); }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--text2); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Summary panels ── */
+  .top-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,2fr) minmax(0,1.4fr); gap: 12px; margin-bottom: 1.5rem; }
+  @media (max-width: 700px) { .top-row { grid-template-columns: 1fr; } }
+  .panel-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.1rem; }
+  .panel-title { font-size: 11px; font-weight: 500; color: var(--text3); letter-spacing: .05em; text-transform: uppercase; margin-bottom: .75rem; }
+  .pot-total { font-size: 26px; font-weight: 500; color: var(--text); margin-bottom: .75rem; }
+  .pot-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-top: 0.5px solid var(--border); font-size: 12px; }
+  .pot-label { color: var(--text2); }
+  .pot-val { font-weight: 500; color: var(--text); }
+  .list-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-top: 0.5px solid var(--border); font-size: 12px; gap: 6px; }
+  .list-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .list-name { color: var(--text); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list-val { font-weight: 500; white-space: nowrap; }
+  .list-val.red { color: var(--danger); }
+  .bar-wrap { width: 48px; flex-shrink: 0; }
+  .bar-bg { height: 5px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; }
+
+  /* ── Team grid ── */
+  .sec-lbl { font-size: 12px; font-weight: 500; color: var(--text2); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 10px; }
+  .teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(295px, 1fr)); gap: 11px; margin-bottom: 1.5rem; }
+  .tc { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; transition: border-color .15s; }
+  .tc:hover { border-color: var(--border2); }
+  .tc.active { border: 2px solid #378ADD; }
+  .th { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-bottom: 0.5px solid var(--border); }
+  .tlogo { flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 500; letter-spacing: .5px; line-height: 1.1; text-align: center; font-size: 10px; }
+  .tname { font-size: 13px; font-weight: 500; color: var(--text); }
+  .tsub { font-size: 11px; color: var(--text2); }
+  .tbar-wrap { padding: 8px 13px 5px; }
+  .tbar-lbl { display: flex; justify-content: space-between; font-size: 10px; color: var(--text2); margin-bottom: 3px; }
+  .tbar-bg { height: 7px; background: var(--bg2); border-radius: 4px; overflow: hidden; }
+  .tbar-fill { height: 100%; border-radius: 4px; }
+  .tstats { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; padding: 8px 13px 10px; gap: 4px; }
+  .s-lbl { font-size: 10px; color: var(--text2); margin-bottom: 2px; }
+  .s-val { font-size: 12px; font-weight: 500; color: var(--text); }
+  .s-val.red { color: var(--danger); } .s-val.warn { color: var(--warn); }
+
+  /* ── Detail panel ── */
+  .detail-panel { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem; display: none; }
+  .detail-panel.visible { display: block; }
+  .p-top { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+  .p-name { font-size: 17px; font-weight: 500; color: var(--text); }
+  .p-sub { font-size: 12px; color: var(--text2); }
+  .p-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 9px; margin-bottom: 1rem; }
+  .hist-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 9px; margin-bottom: .75rem; }
+  .pm { background: var(--bg2); border-radius: var(--radius); padding: .7rem .85rem; }
+  .pm-lbl { font-size: 10px; color: var(--text2); margin-bottom: 3px; }
+  .pm-val { font-size: 16px; font-weight: 500; color: var(--text); }
+  .pm-val.red { color: var(--danger); } .pm-val.warn { color: var(--warn); } .pm-val.good { color: var(--good); }
+  .pm-sub { font-size: 10px; color: var(--text2); margin-top: 2px; }
+  .pm-sub.good { color: var(--good); } .pm-sub.red { color: var(--danger); }
+  .pbar-bg { height: 10px; background: var(--bg2); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+  .pbar-fill { height: 100%; border-radius: 4px; }
+  .pbar-lbl { display: flex; justify-content: space-between; font-size: 10px; color: var(--text2); margin-bottom: 3px; }
+  .close-btn { margin-left: auto; background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 4px 12px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); }
+  .close-btn:hover { background: var(--bg2); }
+  .divider { border: none; border-top: 0.5px solid var(--border); margin: .75rem 0; }
+  .sec-header { font-size: 11px; font-weight: 500; color: var(--text2); margin-bottom: 6px; margin-top: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+  .net-dues-box { background: var(--bg2); border-radius: var(--radius); padding: .85rem; }
+  .net-dues-box .pm-lbl { font-size: 11px; }
+  .net-dues-box .pm-val { font-size: 26px; }
+
+  /* ── Footer ── */
+  .site-footer { text-align: center; padding: 2rem; font-size: 12px; color: var(--text3); border-top: 0.5px solid var(--border); background: var(--bg); margin-top: 2rem; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <span style="font-size:22px">⚾</span>
+  <h1>California Penal League</h1>
+  <span class="badge">2026 Season</span>
+  <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+  <span class="last-updated" id="last-updated"></span>
+</header>
+
+<div class="container">
+  <div id="status" class="status-bar"><span class="spinner"></span> Loading live data from Google Sheets…</div>
+  <div id="dashboard" style="display:none"></div>
+</div>
+
+<footer class="site-footer">
+  California Penal League · Data syncs automatically from Google Sheets
+</footer>
+
+<script>
+// ─────────────────────────────────────────────
+//  CONFIG — swap in your CSV URLs here
+// ─────────────────────────────────────────────
+const FINANCE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?output=csv";
+// TODO: Replace the URL below with your League History tab CSV URL once you publish it
+const HISTORY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1547680400&single=true&output=csv";
+
+// ─────────────────────────────────────────────
+//  Team meta (colors, abbreviations — stable)
+// ─────────────────────────────────────────────
+const TEAM_META = {
+  "Kansas City Royals":    { abbr:"KC",  color1:"#174185", color2:"#C09A5B", text:"#C09A5B" },
+  "Seattle Mariners":      { abbr:"SEA", color1:"#005C5C", color2:"#C4CED4", text:"#C4CED4" },
+  "Los Angeles Dodgers":   { abbr:"LAD", color1:"#005A9C", color2:"#EF3E42", text:"#fff"    },
+  "Los Angeles Angels":    { abbr:"LAA", color1:"#BA0021", color2:"#003263", text:"#fff"    },
+  "Texas Rangers":         { abbr:"TEX", color1:"#003278", color2:"#C0111F", text:"#fff"    },
+  "Milwaukee Brewers":     { abbr:"MIL", color1:"#12284B", color2:"#FFC52F", text:"#FFC52F" },
+  "Las Vegas A's":         { abbr:"LV",  color1:"#003831", color2:"#EFB21E", text:"#EFB21E" },
+  "Chicago Cubs":          { abbr:"CHC", color1:"#0E3386", color2:"#CC3433", text:"#fff"    },
+  "San Diego Padres":      { abbr:"SD",  color1:"#2F241D", color2:"#FFC425", text:"#FFC425" },
+  "Baltimore Orioles":     { abbr:"BAL", color1:"#DF4601", color2:"#000000", text:"#fff"    },
+  "San Francisco Giants":  { abbr:"SF",  color1:"#FD5A1E", color2:"#27251F", text:"#fff"    },
+  "Cincinnati Reds":       { abbr:"CIN", color1:"#C6011F", color2:"#000000", text:"#fff"    },
+};
+
+// ─────────────────────────────────────────────
+//  Parse League History CSV
+//  Columns: Team Name, Money+/-, Win%, Avg Finish,
+//           Total Wins, Total Losses, Avg Season Pts,
+//           Playoff Appearances, Championships
+// ─────────────────────────────────────────────
+function parseHistory(rows) {
+  const hist = {};
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[0] || !r[0].trim()) continue;
+    const name = r[0].trim();
+    hist[name] = {
+      moneyPL:     parseMoney(r[1]),
+      winPct:      parseFloat(r[2]) || 0,
+      avgFinish:   parseFloat(r[3]) || 0,
+      wins:        parseInt(r[4])   || 0,
+      losses:      parseInt(r[5])   || 0,
+      avgPts:      parseFloat(r[6]) || 0,
+      playoffApps: parseInt(r[7])   || 0,
+      champs:      parseInt(r[8])   || 0,
+    };
+  }
+  return hist;
+}
+let HISTORY_FALLBACK = {};
+
+// ─────────────────────────────────────────────
+//  CSV parser
+// ─────────────────────────────────────────────
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.split(/\r?\n/);
+  for (const line of lines) {
+    const cols = [];
+    let cur = "", inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ""; }
+      else { cur += c; }
+    }
+    cols.push(cur.trim());
+    rows.push(cols);
+  }
+  return rows;
+}
+
+function parseMoney(s) {
+  if (!s) return 0;
+  return parseFloat(s.replace(/[$,\(\)]/g, "").replace(/^\-?\(/, "-")) || 0;
+}
+
+// ─────────────────────────────────────────────
+//  Parse the 2026 Financial Overview CSV
+//  Sheet layout: teams in columns, two blocks
+//  Block 1: rows 1-23  → KC, SEA, LAD, LAA, TEX, MIL
+//  Block 2: rows 25-47 → LV, CHC, SD, BAL, SF, CIN
+// ─────────────────────────────────────────────
+function parseFinance(rows) {
+  const teams = {};
+
+  function extractBlock(nameRow, startRow) {
+    // nameRow is 0-indexed
+    const names = [];
+    for (let c = 1; c < rows[nameRow].length; c += 2) {
+      const n = rows[nameRow][c];
+      if (n && n.trim()) names.push({ name: n.trim(), col: c });
+    }
+    names.forEach(({ name, col }) => {
+      const r = startRow; // offset to use for row lookup
+      const get = (rowIdx, colOffset=0) => rows[rowIdx] ? (rows[rowIdx][col + colOffset] || "0") : "0";
+      teams[name] = {
+        name,
+        payrollReal:      parseMoney(get(r+15)),
+        payrollDues:      parseMoney(get(r+15, 1)),
+        taxReal:          parseMoney(get(r+16)),
+        taxDues:          parseMoney(get(r+16, 1)),
+        deadReal:         parseMoney(get(r+17)),
+        deadDues:         parseMoney(get(r+17, 1)),
+        tradeSpentReal:   parseMoney(get(r+18)),
+        tradeSpentDues:   parseMoney(get(r+18, 1)),
+        mlBonusReal:      parseMoney(get(r+20)),
+        mlBonusDues:      parseMoney(get(r+20, 1)),
+        totalExpDues:     parseMoney(get(r+21, 1)),
+        tradeSavedReal:   parseMoney(get(r+10)),
+        tradeSavedDues:   parseMoney(get(r+10, 1)),
+        totalEarnDues:    parseMoney(get(r+12, 1)),
+        finalDues:        parseMoney(get(r+22, 1)),
+        guaranteed2027:   parseMoney(get(r+2)),
+        expiring:         parseMoney(get(r+3)),
+        nonGuaranteed:    parseMoney(get(r+4)),
+        futDead:          parseMoney(get(r+5)),
+        regSeasonFinish:  get(r+8).trim(),
+        regSeasonDues:    parseMoney(get(r+8, 1)),
+        playoffFinish:    get(r+9).trim(),
+        playoffDues:      parseMoney(get(r+9, 1)),
+      };
+    });
+  }
+
+  extractBlock(0, 0);   // Block 1: rows 1-23 (0-indexed: 0-22)
+  extractBlock(24, 24); // Block 2: rows 25-47 (0-indexed: 24-46)
+  return teams;
+}
+
+// ─────────────────────────────────────────────
+//  Render helpers
+// ─────────────────────────────────────────────
+const CAP = 250000000;
+const fmtM  = v => "$" + (v/1e6).toFixed(2) + "M";
+const fmtD  = v => "$" + Math.abs(v).toFixed(2);
+const fmtDsigned = v => (v >= 0 ? "+ $" : "- $") + Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtPts = v => v.toLocaleString("en-US", {maximumFractionDigits:3});
+
+function barColor(pct) { return pct > 100 ? "#A32D2D" : pct > 96 ? "#BA7517" : "#3B6D11"; }
+
+function logoHtml(meta, size, radius) {
+  return `<div class="tlogo" style="width:${size}px;height:${size}px;border-radius:${radius}px;background:${meta.color1};color:${meta.text};font-size:${size<40?10:13}px;border:2px solid ${meta.color2};flex-shrink:0">${meta.abbr}</div>`;
+}
+
+// ─────────────────────────────────────────────
+//  Build summary panels
+// ─────────────────────────────────────────────
+function buildSummary(teams, payouts) {
+  const teamArr = Object.values(teams);
+  const sortedPayroll = [...teamArr].sort((a,b) => (b.payrollReal+b.deadReal) - (a.payrollReal+a.deadReal));
+  const sortedDues    = [...teamArr].sort((a,b) => a.finalDues - b.finalDues);
+
+  const payrollRows = sortedPayroll.map(t => {
+    const meta  = TEAM_META[t.name] || { color1:"#888", abbr:"?" };
+    const total = t.payrollReal + t.deadReal;
+    const pct   = Math.min(104, Math.round(total/CAP*100));
+    const space = CAP - total;
+    const spaceStr = space >= 0 ? fmtM(space)+" left" : fmtM(Math.abs(space))+" over";
+    const spaceColor = space >= 0 ? "var(--text2)" : "var(--danger)";
+    return `<div class="list-row">
+      <div class="list-dot" style="background:${meta.color1}"></div>
+      <span class="list-name">${t.name.replace("Los Angeles","LA")}</span>
+      <div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(100,pct)}%;background:${barColor(pct)}"></div></div></div>
+      <span class="list-val" style="color:${spaceColor};font-size:11px;min-width:52px;text-align:right">${spaceStr}</span>
+      <span class="list-val" style="min-width:54px;text-align:right">${fmtM(total)}</span>
+    </div>`;
+  }).join("");
+
+  const duesRows = sortedDues.map(t => {
+    const meta = TEAM_META[t.name] || { color1:"#888" };
+    return `<div class="list-row">
+      <div class="list-dot" style="background:${meta.color1}"></div>
+      <span class="list-name">${t.name.replace("Los Angeles","LA")}</span>
+      <span class="list-val red">-${fmtD(t.finalDues)}</span>
+    </div>`;
+  }).join("");
+
+  const totalPot = payouts.reduce((s,p)=>s+p.amount,0);
+
+  return `<div class="top-row">
+    <div class="panel-card">
+      <div class="panel-title">Total pot</div>
+      <div class="pot-total">${fmtD(totalPot)}</div>
+      ${payouts.map(p=>`<div class="pot-row"><span class="pot-label">${p.label}</span><span class="pot-val">${fmtD(p.amount)}</span></div>`).join("")}
+    </div>
+    <div class="panel-card">
+      <div class="panel-title">Team payrolls (active + dead money) · $250M cap</div>
+      ${payrollRows}
+    </div>
+    <div class="panel-card">
+      <div class="panel-title">Net dues owed</div>
+      ${duesRows}
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+//  Build team cards
+// ─────────────────────────────────────────────
+function buildCards(teams) {
+  return Object.values(teams).map((t, i) => {
+    const meta  = TEAM_META[t.name] || { color1:"#888", color2:"#ccc", text:"#fff", abbr:"?" };
+    const total = t.payrollReal + t.deadReal;
+    const pct   = Math.min(104, Math.round(total/CAP*100));
+    const space = CAP - total;
+    const spaceStr = space >= 0 ? fmtM(space)+" available" : fmtM(Math.abs(space))+" over cap";
+    return `<div class="tc" id="card-${i}" onclick="expandTeam(${i})">
+      <div class="th">
+        ${logoHtml(meta, 36, 8)}
+        <div>
+          <div class="tname">${t.name}</div>
+          <div class="tsub">${fmtM(total)} cap hit · ${spaceStr}</div>
+        </div>
+      </div>
+      <div class="tbar-wrap">
+        <div class="tbar-lbl"><span>Cap used (payroll + dead money)</span><span>${pct}%</span></div>
+        <div class="tbar-bg"><div class="tbar-fill" style="width:${Math.min(100,pct)}%;background:${barColor(pct)}"></div></div>
+      </div>
+      <div class="tstats">
+        <div><div class="s-lbl">Active payroll</div><div class="s-val">${fmtM(t.payrollReal)}</div></div>
+        <div><div class="s-lbl">Dead money</div><div class="s-val ${t.deadReal>0?"warn":""}">${t.deadReal===0?"—":fmtM(t.deadReal)}</div></div>
+        <div><div class="s-lbl">Payroll tax</div><div class="s-val ${t.taxDues>240?"warn":""}">${fmtM(t.taxReal)}</div></div>
+        <div><div class="s-lbl">Net dues owed</div><div class="s-val red">-${fmtD(t.finalDues)}</div></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ─────────────────────────────────────────────
+//  Expand team detail
+// ─────────────────────────────────────────────
+let _teams = {};
+
+function expandTeam(i) {
+  const teamArr = Object.values(_teams);
+  const t = teamArr[i];
+  const meta  = TEAM_META[t.name] || { color1:"#888", color2:"#ccc", text:"#fff", abbr:"?" };
+  const h     = HISTORY_FALLBACK[t.name] || {};
+  const total = t.payrollReal + t.deadReal;
+  const pct   = Math.min(104, Math.round(total/CAP*100));
+  const space = CAP - total;
+  const spaceStr  = space >= 0 ? fmtM(space)+" available" : fmtM(Math.abs(space))+" over cap";
+  const spaceClass = space >= 0 ? "good" : "red";
+
+  document.querySelectorAll(".tc").forEach(c => c.classList.remove("active"));
+  document.getElementById("card-"+i).classList.add("active");
+
+  const panel = document.getElementById("detail-panel");
+  panel.innerHTML = `
+    <div class="p-top">
+      ${logoHtml(meta, 52, 10)}
+      <div>
+        <div class="p-name">${t.name}</div>
+        <div class="p-sub">2026 season · full financial breakdown</div>
+      </div>
+      <button class="close-btn" onclick="closePanel()">✕ close</button>
+    </div>
+
+    <div class="sec-header">League history</div>
+    <div class="hist-grid">
+      <div class="pm"><div class="pm-lbl">All-time money +/-</div><div class="pm-val" style="color:${h.moneyPL>=0?"var(--good)":"var(--danger)"}">${fmtDsigned(h.moneyPL)}</div></div>
+      <div class="pm"><div class="pm-lbl">Win percentage</div><div class="pm-val">${((h.winPct||0)*100).toFixed(1)}%</div><div class="pm-sub">${h.wins||0}W – ${h.losses||0}L</div></div>
+      <div class="pm"><div class="pm-lbl">Avg finish</div><div class="pm-val">${h.avgFinish||"—"}</div><div class="pm-sub">out of 12</div></div>
+      <div class="pm"><div class="pm-lbl">Avg season pts</div><div class="pm-val">${fmtPts(h.avgPts||0)}</div></div>
+      <div class="pm"><div class="pm-lbl">Playoff appearances</div><div class="pm-val">${h.playoffApps||0}</div></div>
+      <div class="pm"><div class="pm-lbl">Championships</div><div class="pm-val" style="color:${(h.champs||0)>0?"var(--warn)":"var(--text)"}">${(h.champs||0)===0?"—":h.champs+" 🏆"}</div></div>
+    </div>
+
+    <hr class="divider">
+    <div class="sec-header">2026 expenses</div>
+    <div class="p-grid">
+      <div class="pm"><div class="pm-lbl">Active payroll</div><div class="pm-val">${fmtM(t.payrollReal)}</div><div class="pm-sub">$${t.payrollDues.toFixed(2)} in dues</div></div>
+      <div class="pm"><div class="pm-lbl">Dead money</div><div class="pm-val ${t.deadReal>0?"warn":"good"}">${t.deadReal===0?"None":fmtM(t.deadReal)}</div><div class="pm-sub">${t.deadDues===0?"$0.00":"$"+t.deadDues.toFixed(2)} in dues</div></div>
+      <div class="pm"><div class="pm-lbl">Total cap hit</div><div class="pm-val">${fmtM(total)}</div><div class="pm-sub ${spaceClass}">${spaceStr}</div></div>
+      <div class="pm"><div class="pm-lbl">Payroll tax</div><div class="pm-val ${t.taxDues>240?"warn":""}">${fmtM(t.taxReal)}</div><div class="pm-sub">$${t.taxDues.toFixed(2)} in dues</div></div>
+      <div class="pm"><div class="pm-lbl">MiLB bonus pool</div><div class="pm-val">${fmtM(t.mlBonusReal)}</div><div class="pm-sub">$${t.mlBonusDues.toFixed(2)} in dues</div></div>
+      <div class="pm"><div class="pm-lbl">Trade $ spent</div><div class="pm-val">${t.tradeSpentReal===0?"None":fmtM(t.tradeSpentReal)}</div><div class="pm-sub">$${t.tradeSpentDues.toFixed(2)} in dues</div></div>
+    </div>
+    <div class="pm" style="margin-bottom:.75rem"><div class="pm-lbl">Total expenses</div><div class="pm-val red">$${t.totalExpDues.toFixed(2)} in dues</div></div>
+
+    <hr class="divider">
+    <div class="sec-header">2026 earnings</div>
+    <div class="p-grid">
+      <div class="pm"><div class="pm-lbl">Trade $ saved</div><div class="pm-val good">${t.tradeSavedReal===0?"None":fmtM(t.tradeSavedReal)}</div><div class="pm-sub">${t.tradeSavedDues===0?"$0.00":"$"+t.tradeSavedDues.toFixed(2)} earned back</div></div>
+      <div class="pm"><div class="pm-lbl">Regular season finish</div><div class="pm-val" style="color:var(--text2)">${t.regSeasonFinish||"TBD"}</div><div class="pm-sub">${t.regSeasonDues>0?"$"+t.regSeasonDues.toFixed(2)+" earned":"$0.00 earned so far"}</div></div>
+      <div class="pm"><div class="pm-lbl">Playoff finish</div><div class="pm-val" style="color:var(--text2)">${t.playoffFinish||"TBD"}</div><div class="pm-sub">${t.playoffDues>0?"$"+t.playoffDues.toFixed(2)+" earned":"$0.00 earned so far"}</div></div>
+    </div>
+    <div class="pm" style="margin-bottom:.75rem"><div class="pm-lbl">Total earnings</div><div class="pm-val good">$${t.totalEarnDues.toFixed(2)} earned back</div></div>
+
+    <hr class="divider">
+    <div class="net-dues-box pm"><div class="pm-lbl">Net dues owed (until end of season)</div><div class="pm-val red" style="font-size:26px">-${fmtD(t.finalDues)}</div></div>
+
+    <hr class="divider">
+    <div class="sec-header">2027 outlook</div>
+    <div class="p-grid">
+      <div class="pm"><div class="pm-lbl">Guaranteed payroll</div><div class="pm-val">${fmtM(t.guaranteed2027)}</div></div>
+      <div class="pm"><div class="pm-lbl">Expiring contracts</div><div class="pm-val warn">${fmtM(t.expiring)}</div></div>
+      <div class="pm"><div class="pm-lbl">Non-guaranteed</div><div class="pm-val">${fmtM(t.nonGuaranteed)}</div></div>
+      <div class="pm"><div class="pm-lbl">Future dead money</div><div class="pm-val ${t.futDead>0?"warn":"good"}">${t.futDead===0?"None":fmtM(t.futDead)}</div></div>
+      <div class="pm"><div class="pm-lbl">Current cap space</div><div class="pm-val ${spaceClass}">${spaceStr}</div></div>
+    </div>
+    <div class="pbar-lbl" style="margin-top:.5rem"><span>Cap used: ${fmtM(total)} of $250M (active + dead)</span><span>${pct}%</span></div>
+    <div class="pbar-bg"><div class="pbar-fill" style="width:${Math.min(100,pct)}%;background:${barColor(pct)}"></div></div>
+  `;
+  panel.classList.add("visible");
+  panel.scrollIntoView({ behavior:"smooth", block:"nearest" });
+}
+
+function fmtDsigned(v) {
+  return (v >= 0 ? "+ $" : "- $") + Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function closePanel() {
+  document.getElementById("detail-panel").classList.remove("visible");
+  document.querySelectorAll(".tc").forEach(c => c.classList.remove("active"));
+}
+
+// ─────────────────────────────────────────────
+//  Main load
+// ─────────────────────────────────────────────
+async function loadData() {
+  const statusEl = document.getElementById("status");
+  const dashEl   = document.getElementById("dashboard");
+  statusEl.className = "status-bar";
+  statusEl.innerHTML = '<span class="spinner"></span> Loading live data from Google Sheets…';
+  statusEl.style.display = "block";
+  dashEl.style.display = "none";
+
+  try {
+    // Fetch both CSVs in parallel
+    const [finResp, histResp] = await Promise.all([
+      fetch(FINANCE_CSV),
+      fetch(HISTORY_CSV)
+    ]);
+    if (!finResp.ok) throw new Error("Could not load financial data");
+
+    const finCSV  = await finResp.text();
+    const teams   = parseFinance(parseCSV(finCSV));
+    _teams = teams;
+
+    // Load history — fall back to empty if CSV not available yet
+    if (histResp.ok) {
+      const histCSV = await histResp.text();
+      HISTORY_FALLBACK = parseHistory(parseCSV(histCSV));
+    }
+
+    const payouts = [
+      { label:"Playoff 1st",       amount:4501.35 },
+      { label:"Reg. season 1st",   amount:3000.90 },
+      { label:"Playoff 2nd",       amount:3000.90 },
+      { label:"Reg. season 2nd",   amount:1500.45 },
+      { label:"Playoff 3rd",       amount:2250.68 },
+      { label:"Toilet bowl",       amount:750.23  },
+    ];
+
+    dashEl.innerHTML = `
+      ${buildSummary(teams, payouts)}
+      <p class="sec-lbl">All 12 teams — click any card to expand</p>
+      <div class="detail-panel" id="detail-panel"></div>
+      <div class="teams-grid">${buildCards(teams)}</div>
+    `;
+
+    statusEl.style.display = "none";
+    dashEl.style.display   = "block";
+
+    const now = new Date();
+    document.getElementById("last-updated").textContent =
+      "Updated " + now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+
+  } catch (err) {
+    statusEl.className = "status-bar error";
+    statusEl.innerHTML = "⚠ Could not load data from Google Sheets. Make sure the sheet is published to web.<br><small>" + err.message + "</small>";
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
