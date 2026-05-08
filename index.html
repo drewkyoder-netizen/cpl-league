@@ -135,6 +135,14 @@ const FINANCE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBW
 const HISTORY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1547680400&single=true&output=csv";
 
 // ─────────────────────────────────────────────
+//  CORS proxy wrapper — required for browser
+//  fetching of Google Sheets CSV from GitHub Pages
+// ─────────────────────────────────────────────
+function proxyUrl(url) {
+  return "https://corsproxy.io/?" + encodeURIComponent(url);
+}
+
+// ─────────────────────────────────────────────
 //  Team meta (colors, abbreviations — stable)
 // ─────────────────────────────────────────────
 const TEAM_META = {
@@ -460,8 +468,8 @@ async function loadData() {
   try {
     // Fetch both CSVs in parallel
     const [finResp, histResp] = await Promise.all([
-      fetch(FINANCE_CSV),
-      fetch(HISTORY_CSV)
+      fetch(proxyUrl(FINANCE_CSV)),
+      fetch(proxyUrl(HISTORY_CSV))
     ]);
     if (!finResp.ok) throw new Error("Could not load financial data");
 
