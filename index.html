@@ -135,11 +135,28 @@ const FINANCE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBW
 const HISTORY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1547680400&single=true&output=csv";
 
 // ─────────────────────────────────────────────
-//  CORS proxy wrapper — required for browser
-//  fetching of Google Sheets CSV from GitHub Pages
+//  CORS proxy wrapper — tries multiple proxies
+//  in sequence until one works
 // ─────────────────────────────────────────────
-function proxyUrl(url) {
-  return "https://corsproxy.io/?" + encodeURIComponent(url);
+const PROXIES = [
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://proxy.cors.sh/${url}`,
+];
+
+async function fetchWithProxy(url) {
+  for (const proxy of PROXIES) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      const resp = await fetch(proxy(url), { signal: controller.signal });
+      clearTimeout(timer);
+      if (resp.ok) return resp;
+    } catch(e) {
+      console.warn("Proxy failed, trying next...", e);
+    }
+  }
+  throw new Error("All proxies failed — check that your Google Sheet is published to web.");
 }
 
 // ─────────────────────────────────────────────
@@ -467,20 +484,18 @@ async function loadData() {
 
   try {
     // Fetch both CSVs in parallel
-    const [finResp, histResp] = await Promise.all([
-      fetch(proxyUrl(FINANCE_CSV)),
-      fetch(proxyUrl(HISTORY_CSV))
-    ]);
-    if (!finResp.ok) throw new Error("Could not load financial data");
-
+    const finResp = await fetchWithProxy(FINANCE_CSV);
     const finCSV  = await finResp.text();
     const teams   = parseFinance(parseCSV(finCSV));
     _teams = teams;
 
-    // Load history — fall back to empty if CSV not available yet
-    if (histResp.ok) {
-      const histCSV = await histResp.text();
+    // Load history separately — fall back gracefully if it fails
+    try {
+      const histResp = await fetchWithProxy(HISTORY_CSV);
+      const histCSV  = await histResp.text();
       HISTORY_FALLBACK = parseHistory(parseCSV(histCSV));
+    } catch(e) {
+      console.warn("History tab failed to load, using fallback data", e);
     }
 
     const payouts = [
