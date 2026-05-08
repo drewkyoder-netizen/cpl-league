@@ -462,10 +462,6 @@ function expandTeam(i) {
   panel.scrollIntoView({ behavior:"smooth", block:"nearest" });
 }
 
-function fmtDsigned(v) {
-  return (v >= 0 ? "+ $" : "- $") + Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
-}
-
 function closePanel() {
   document.getElementById("detail-panel").classList.remove("visible");
   document.querySelectorAll(".tc").forEach(c => c.classList.remove("active"));
