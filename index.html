@@ -103,6 +103,31 @@
   .net-dues-box .pm-lbl { font-size: 11px; }
   .net-dues-box .pm-val { font-size: 26px; }
 
+
+  /* ── CBA Section ── */
+  .cba-wrap { margin-top: 2rem; margin-bottom: 2rem; }
+  .cba-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .cba-header h2 { font-size: 14px; font-weight: 500; color: var(--text2); letter-spacing: .05em; text-transform: uppercase; }
+  .cba-meta { font-size: 11px; color: var(--text3); }
+  .cba-toc { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1rem; }
+  .cba-toc-title { font-size: 13px; font-weight: 500; color: var(--text2); padding: .75rem 1rem; border-bottom: 0.5px solid var(--border); letter-spacing: .03em; }
+  .cba-item { border-top: 0.5px solid var(--border); }
+  .cba-item:first-child { border-top: none; }
+  .cba-trigger { width: 100%; background: none; border: none; cursor: pointer; padding: .85rem 1rem; display: flex; align-items: center; gap: 10px; font-family: var(--font); text-align: left; transition: background .15s; }
+  .cba-trigger:hover { background: var(--bg2); }
+  .cba-trigger.open { background: var(--bg2); }
+  .cba-num { font-size: 11px; font-weight: 500; color: var(--text3); width: 22px; flex-shrink: 0; }
+  .cba-title { font-size: 13px; font-weight: 500; color: var(--text); flex: 1; }
+  .cba-arrow { font-size: 11px; color: var(--text3); transition: transform .2s; flex-shrink: 0; }
+  .cba-trigger.open .cba-arrow { transform: rotate(90deg); }
+  .cba-body { display: none; padding: 0 1rem 1rem 1rem; background: var(--bg2); }
+  .cba-body.visible { display: block; }
+  .cba-body h3 { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin: 1rem 0 .4rem; }
+  .cba-body p { font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: .6rem; }
+  .cba-body ul { margin: .4rem 0 .6rem 1.25rem; }
+  .cba-body ul li { font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: .25rem; }
+  .cba-body .sub-items { margin-left: 1.25rem; list-style-type: circle; }
+  .cba-divider { border: none; border-top: 0.5px solid var(--border); margin: .75rem 0; }
   /* ── Footer ── */
   .site-footer { text-align: center; padding: 2rem; font-size: 12px; color: var(--text3); border-top: 0.5px solid var(--border); background: var(--bg); margin-top: 2rem; }
 </style>
@@ -471,6 +496,197 @@ function closePanel() {
   document.querySelectorAll(".tc").forEach(c => c.classList.remove("active"));
 }
 
+
+// ─────────────────────────────────────────────
+//  CBA sections data
+// ─────────────────────────────────────────────
+const CBA_SECTIONS = [
+  {
+    num: "1", title: "League Overview",
+    content: `
+      <p>12 Team League. Roster Size: 20 starters, 14 bench reserves, up to 25 minor leaguers.</p>
+      <p>This league will be Head-to-Head Bi-Monthly Scoring Periods with each team playing 6 matchups per scoring period. Playoffs will start in Period 11 and be a 6 team race (based on regular season finish) during one longer period.</p>
+      <h3>Payouts</h3>
+      <ul>
+        <li>1st Place Regular Season: 20%</li>
+        <li>2nd Place Regular Season: 10%</li>
+        <li>1st Place Playoffs: 30%</li>
+        <li>2nd Place Playoffs: 20%</li>
+        <li>3rd Place Playoffs: 15%</li>
+        <li>1st Place Toilet Bowl: 5%</li>
+        <li>Last Place Regular Season: $100 penalty</li>
+        <li>Last Place Toilet Bowl: $100 penalty</li>
+      </ul>
+      <h3>Salary</h3>
+      <p>Each team will have a salary floor of $75M and a hard cap of $250M ($250,000 = $1 of league fees).</p>
+      <h3>Payroll Tax Penalties</h3>
+      <ul>
+        <li>$0 – $189.99M: No tax</li>
+        <li>$190M – $209.99M: 50% tax per dollar (max $10M in this bracket)</li>
+        <li>$210M – $229.99M: 100% tax per dollar (max $20M in this bracket)</li>
+        <li>$230M – $250M: 200% tax per dollar (max $40M in this bracket)</li>
+      </ul>
+      <h3>Scoring Periods</h3>
+      <p>Each scoring period will be 2 weeks (1st, Last, and All-Star periods can be exceptions). There will be a prorated cap for each period at each position (162 games per position and 1,350 innings pitched).</p>
+      <h3>Transactions</h3>
+      <ul>
+        <li>Players can be picked up each week via auction bid. Minimum in-season salary starts at $3M and decreases by $250,000 per scoring period.</li>
+        <li>Minor league players cannot be picked up during the season. All minor league players will be acquired via the yearly minor league draft.</li>
+        <li>Trades can be made at any point during the offseason and up until the Trade Deadline (end of scoring period 9). Each team must stay within $75M–$250M payroll.</li>
+      </ul>
+    `
+  },
+  {
+    num: "2", title: "League Financials",
+    content: `
+      <p>League payroll for the fantasy season will be determined individually by each team. For the purpose of this league, $250,000 = $1 of league dues.</p>
+      <h3>2a: Fiscal Year</h3>
+      <p>The California Penal League fiscal year officially begins at the start of Offseason Free Agency (typically early February) and concludes at the end of the fantasy baseball season. All financial obligations, contract decisions, and roster deadlines are governed by this fiscal calendar.</p>
+      <h3>2b: Payroll Floor</h3>
+      <p>League payroll for each team must stay above $75M for the entirety of the season. A team may only drop below the $75M floor during the offseason.</p>
+      <h3>2c: Salary Cap & Tax Lines</h3>
+      <p>League payroll may not exceed $250M during any point of the season, including the offseason. Luxury tax brackets:</p>
+      <ul>
+        <li>$0 – $189.99M: No tax</li>
+        <li>$190M – $209.99M: 50% tax per dollar (max $10M)</li>
+        <li>$210M – $229.99M: 100% tax per dollar (max $20M)</li>
+        <li>$230M – $250M: 200% tax per dollar (max $40M)</li>
+      </ul>
+      <p>For example, a $250M payroll will be taxed $70M for a total dues obligation of $320M.</p>
+      <h3>2d: League Prize Money</h3>
+      <p>Formula: Total Team Payrolls / 250,000 +/- Prorated traded salaries – Fantrax Site Fee.</p>
+      <p>League fees must be paid within one week of the completion of the fantasy baseball season. A 10% fine per week applies to late payments.</p>
+      <h3>2e: Fines</h3>
+      <p>Any team that breaks league rules is subject to one warning and subsequent $50 fines for each following violation. Violations include: playing a RP in a SP spot, or picking up a minor league player that has not played a major league game.</p>
+      <h3>2f: Exit Fee</h3>
+      <p>Any team that wishes to leave the league will be required to pay 100% of any remaining signing bonus obligations and 50% of remaining veteran contracts. They can forego these expenses by finding someone to take on all future expenses and ownership of their team.</p>
+    `
+  },
+  {
+    num: "3", title: "Scoring",
+    content: `
+      <p>This league will be Head-to-Head Bi-Monthly Scoring Periods with each team playing 6 matchups per scoring period. Please see the Fantrax settings for scoring specifics. There will be a prorated cap for each period at each position (162 games per position and 1,350 innings pitched).</p>
+      <h3>3a: Illegal Scoring</h3>
+      <p>Any RP with a SP designation CANNOT be placed in a SP spot to accrue RP points. In simple terms, no saves should come from SP spots. This will be subject to 1 warning with a $50 fee for each occurrence thereafter. Removal of points gained from an illegal roster move is at the discretion of the commissioner. Please report any suspicious roster activity to the commissioner.</p>
+    `
+  },
+  {
+    num: "4", title: "Roster",
+    content: `
+      <h3>4a: Major League Roster</h3>
+      <p>Each team's Major League roster will consist of 20 starting players with up to 14 bench reserves and 10 IL spots. You are required to have a minimum of 27 players on your major league roster during the season.</p>
+      <h3>4b: Minor League Roster</h3>
+      <p>Each team's Minor League roster will consist of up to 25 players. Teams will not be able to pick up minor league players during the year. Minor league players will only be acquired via trade or the yearly Minor League Player Draft.</p>
+      <h3>4c: Injured Reserves</h3>
+      <p>Each team will have 10 Injured Reserve spots to utilize during the season. Utilizing these spots will open up a roster spot; however, the team will still be financially responsible for players that return healthy during the season.</p>
+      <p>In the event a player on your roster plays less than a 30-day period within one MLB season, teams may submit documented evidence to forego 75% of that player's salary for that season. This documentation must be submitted within one week after the fantasy baseball season ends.</p>
+    `
+  },
+  {
+    num: "5", title: "Contracts",
+    content: `
+      <h3>5a: Veteran Contracts & Salary</h3>
+      <p>During Offseason Free Agency, each team is required to submit their desired contract length for each player signed within one week of the signing. The auction bid represents the current year's salary. Players may be signed to contracts of up to 6 years. Failure to submit contract details may result in an automatic 1-year contract at the commissioner's discretion.</p>
+      <h3>5b: Team Option (TO) Contracts</h3>
+      <p>Each team is permitted to carry a maximum of two active team option (TO) contracts at any given time. A team option may only be applied to the final year of a contract. Team option decisions must be declared prior to the start of Offseason Free Agency. Once exercised, the contract is no longer classified as a TO contract, allowing the team to enter into a new one.</p>
+      <h3>5c: Releasing a Veteran Contract</h3>
+      <p>If a major league player under contract is released during the active season, the releasing team is required to pay 100% of the current year's salary and 50% of each remaining year as dead money. If released after the fantasy season but before Offseason Free Agency, the team pays 50% of each remaining year only, with no current year obligation.</p>
+      <h3>5d: Minor League Contracts & Salary</h3>
+      <p>Minor league players carry no salary while on the minor league roster. Teams may keep a player in a minor league spot without activating their salary until they choose to do so, or until the player reaches 200 ABs or 60 IP in a single MLB season.</p>
+      <p>Once activated, CPL salary follows real life MLB timelines:</p>
+      <ul>
+        <li>Years 1–3 (Pre-Arbitration): $750,000 per year (CPL minimum)</li>
+        <li>Years 4–6 or 4–7 (Arbitration): Mirrors actual MLB arbitration figures via Spotrac</li>
+        <li>Upon completion of arbitration years, the player enters Offseason Free Agency</li>
+      </ul>
+      <p>If a player signs a long-term extension in real life, the CPL team retains control through what would have been the final year of their arbitration period at the extension's actual salary figures.</p>
+      <h3>5e: Calling Up Minors</h3>
+      <p>Once activated, a player must be moved to the major league roster and their CPL salary immediately activated. A player may be returned to a minor league spot provided they have not exceeded CPL eligibility (200 ABs or 60 IP). If a player is optioned back to the minor leagues in real life, they regain CPL minor league eligibility regardless of AB/IP totals. Their CPL salary obligation continues uninterrupted regardless of roster placement.</p>
+      <h3>5f: Releasing a Rookie Contract</h3>
+      <p>If a player on a rookie contract is released during the active season, the releasing team pays 100% of that player's current year salary as dead money. No penalty applies to future years.</p>
+      <p>Each January, once arbitration salaries are determined, team GMs have until the start of OFA to declare retention or release. Any player not released before OFA starts will be assumed retained and that team is fully responsible for their salary.</p>
+      <p>Upon release, a player permanently loses rookie contract status and enters OFA as a veteran free agent.</p>
+    `
+  },
+  {
+    num: "6", title: "Trading",
+    content: `
+      <p>Any major league player, minor league player, or draft pick may be included in a trade. Cash, money, minor league signing bonuses, and cap space cannot be included in any trade.</p>
+      <h3>6a: Trading Salary</h3>
+      <p>Any current year salary involved in a trade will be prorated and divided between the sending and receiving team based on the scoring period in which the trade occurs. The sending team retains responsibility for scoring periods already completed; the receiving team assumes all remaining periods. All future year salaries are the sole financial responsibility of the receiving team.</p>
+      <p><em>Example: Team A trades Aaron Judge ($35M) to Team B for Anthony Santander ($8M) at the start of the 4th scoring period (of 10 total): Team A pays Judge $11,666,667 and Santander $5,333,333. Team B pays Judge $23,333,333 and Santander $2,666,667.</em></p>
+      <h3>6b: Trade Deadline</h3>
+      <p>The Trade Deadline occurs at the conclusion of the 9th scoring period each season. No trades will be permitted from that point through the remainder of the playoff period. Once playoffs conclude, trading resumes and remains open through the subsequent offseason.</p>
+      <h3>6c: Trade Veto</h3>
+      <p>All trades are subject to review and approval by the commissioner prior to being officially processed. The commissioner reserves the right to veto any trade deemed collusive, imbalanced to the detriment of the league, or in violation of CPL rules. If the commissioner is a party to the trade, full review authority transfers to the assistant commissioner.</p>
+    `
+  },
+  {
+    num: "7", title: "In-Season Free Agents & Waivers",
+    content: `
+      <h3>7a: Waivers</h3>
+      <p>Once a team releases a player, that player will enter the waiver wire for 3 days. A team can claim the player and assume their full salary and future contract obligations. Waiver priority is based on reverse regular season standings order. If a player clears waivers unclaimed, the releasing team owes dead money of 100% of the current year's salary and 50% of each remaining year.</p>
+      <h3>7b: Free Agency</h3>
+      <p>After a player clears waivers, they enter free agency. In-season free agency is processed each Monday at 3:00 AM EST. The minimum salary begins at $3M and decreases by $250,000 each scoring period. This takes place via a visible bidding system. Any free agent signed during the season is signed for the remainder of that year only and enters OFA at season's end.</p>
+      <h3>7c: Minor League Free Agents</h3>
+      <p>Any player not on a CPL minor league roster cannot be picked up via free agency until that player has played in a major league game. Please report any suspicious activity to the commissioner.</p>
+      <h3>7d: International Free Agents</h3>
+      <p>International amateurs subject to the MLB international bonus pool structure (e.g., Roki Sasaki) are only available via the Offseason Minor League Player Draft. International free agents not subject to the bonus pool (e.g., Shohei Ohtani) are available to bid on via Offseason Free Agency.</p>
+    `
+  },
+  {
+    num: "8", title: "Offseason Events",
+    content: `
+      <p>The offseason officially begins once each manager has paid their league fees from the previous season.</p>
+      <h3>8a: January Winter Meetings</h3>
+      <p>Team managers may formally submit proposed rule changes to the league office each offseason. All proposals will be voted on via official League Poll. Amending or removing an existing rule requires a supermajority of 8 out of 12 votes. Establishing a new rule requires a simple majority. Approved changes take effect at the start of the upcoming season unless otherwise designated by the commissioner.</p>
+      <h3>8b: Rookie Contract/Arbitration Decisions</h3>
+      <p>All rookie contract retention and release decisions must be finalized prior to the start of Offseason Free Agency each season. See Section 5f for full details. Any player on a rookie contract not released before OFA starts will be assumed retained.</p>
+      <h3>8c: Offseason Free Agency (OFA)</h3>
+      <p>OFA commences following the conclusion of MLB Arbitration hearings (typically late January or early February). OFA is conducted via slow auction draft operated through CouchManagers.com. Each team's bidding budget is determined by their available cap space at the time OFA begins. All players not under contract with a CPL team are eligible, including expired contracts, released players, released rookie contract players, and eligible international free agents (see Section 7d).</p>
+      <h3>8d: Minor League Player Draft</h3>
+      <p>The Minor League Player Draft takes place each offseason in late February (subject to league scheduling). The draft consists of 5 rounds with draft order determined by reverse regular season standings finish from the prior season. The pool includes all first year minor leaguers entering the system and any existing minor leaguers not previously acquired by a CPL roster. Players already under CPL control are not eligible to be drafted.</p>
+    `
+  }
+];
+
+function buildCBA() {
+  const items = CBA_SECTIONS.map((s, i) => `
+    <div class="cba-item">
+      <button class="cba-trigger" onclick="toggleCBA(${i})" id="cba-btn-${i}">
+        <span class="cba-num">${s.num}</span>
+        <span class="cba-title">${s.title}</span>
+        <span class="cba-arrow">▶</span>
+      </button>
+      <div class="cba-body" id="cba-body-${i}">
+        <hr class="cba-divider">
+        ${s.content}
+      </div>
+    </div>
+  `).join("");
+
+  return `
+    <div class="cba-wrap">
+      <div class="cba-header">
+        <h2>⚖️ Collective Bargaining Agreement</h2>
+        <span class="cba-meta">Revised May 9, 2025 · Commissioner: Drew Yoder</span>
+      </div>
+      <div class="cba-toc">
+        <div class="cba-toc-title">📋 Table of Contents — click any section to expand</div>
+        ${items}
+      </div>
+    </div>
+  `;
+}
+
+function toggleCBA(i) {
+  const body = document.getElementById("cba-body-" + i);
+  const btn  = document.getElementById("cba-btn-" + i);
+  const isOpen = body.classList.contains("visible");
+  body.classList.toggle("visible", !isOpen);
+  btn.classList.toggle("open", !isOpen);
+}
+
 // ─────────────────────────────────────────────
 //  Main load
 // ─────────────────────────────────────────────
@@ -512,6 +728,7 @@ async function loadData() {
       <p class="sec-lbl">All 12 teams — click any card to expand</p>
       <div class="detail-panel" id="detail-panel"></div>
       <div class="teams-grid">${buildCards(teams)}</div>
+      ${buildCBA()}
     `;
 
     statusEl.style.display = "none";
