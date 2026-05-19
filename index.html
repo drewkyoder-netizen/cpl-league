@@ -379,7 +379,7 @@ function buildSummary(teams, payouts) {
     return `<div class="list-row">
       <div class="list-dot" style="background:${meta.color1}"></div>
       <span class="list-name">${t.name.replace("Los Angeles","LA")}</span>
-      <span class="list-val red">-${fmtD(t.finalDues)}</span>
+      <span class="list-val" style="color:${t.finalDues>=0?'var(--good)':'var(--danger)'}">${t.finalDues>=0?'+ '+fmtD(t.finalDues):'-'+fmtD(t.finalDues)}</span>
     </div>`;
   }).join("");
 
@@ -399,7 +399,7 @@ function buildSummary(teams, payouts) {
       ${payrollRows}
     </div>
     <div class="panel-card">
-      <div class="panel-title">Net dues owed</div>
+      <div class="panel-title">Net dues owed / earned</div>
       ${duesRows}
     </div>
   </div>`;
@@ -431,7 +431,7 @@ function buildCards(teams) {
         <div><div class="s-lbl">Active payroll</div><div class="s-val">${fmtM(t.payrollReal)}</div></div>
         <div><div class="s-lbl">Dead money</div><div class="s-val ${t.deadReal>0?"warn":""}">${t.deadReal===0?"—":fmtM(t.deadReal)}</div></div>
         <div><div class="s-lbl">Payroll tax</div><div class="s-val ${t.taxDues>240?"warn":""}">${fmtM(t.taxReal)}</div></div>
-        <div><div class="s-lbl">Net dues owed</div><div class="s-val red">-${fmtD(t.finalDues)}</div></div>
+        <div><div class="s-lbl">Net dues owed</div><div class="s-val" style="color:${t.finalDues>=0?'var(--good)':'var(--danger)'}">${t.finalDues>=0?'+ '+fmtD(t.finalDues):'-'+fmtD(t.finalDues)}</div></div>
       </div>
     </div>`;
   }).join("");
@@ -499,7 +499,7 @@ function expandTeam(i) {
     <div class="pm" style="margin-bottom:.75rem"><div class="pm-lbl">Total earnings</div><div class="pm-val good">$${t.totalEarnDues.toFixed(2)} earned back</div></div>
 
     <hr class="divider">
-    <div class="net-dues-box pm"><div class="pm-lbl">Net dues owed (until end of season)</div><div class="pm-val red" style="font-size:26px">-${fmtD(t.finalDues)}</div></div>
+    <div class="net-dues-box pm"><div class="pm-lbl">Net dues owed</div><div class="pm-val" style="font-size:26px;color:${t.finalDues>=0?'var(--good)':'var(--danger)'}">${t.finalDues>=0?'+ '+fmtD(t.finalDues):'-'+fmtD(t.finalDues)}</div></div>
 
     <hr class="divider">
     <div class="sec-header">2027 outlook</div>
