@@ -68,6 +68,8 @@
   .th { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-bottom: 0.5px solid var(--border); }
   .tlogo { flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 500; letter-spacing: .5px; line-height: 1.1; text-align: center; font-size: 10px; }
   .tname { font-size: 13px; font-weight: 500; color: var(--text); }
+  .towner { font-size: 11px; color: var(--text2); }
+  .tphone { font-size: 11px; color: var(--text3); }
   .tsub { font-size: 11px; color: var(--text2); }
   .tbar-wrap { padding: 8px 13px 5px; }
   .tbar-lbl { display: flex; justify-content: space-between; font-size: 10px; color: var(--text2); margin-bottom: 3px; }
@@ -188,18 +190,18 @@ async function fetchWithProxy(url) {
 //  Team meta (colors, abbreviations — stable)
 // ─────────────────────────────────────────────
 const TEAM_META = {
-  "Kansas City Royals":    { abbr:"KC",  color1:"#174185", color2:"#C09A5B", text:"#C09A5B" },
-  "Seattle Mariners":      { abbr:"SEA", color1:"#005C5C", color2:"#C4CED4", text:"#C4CED4" },
-  "Los Angeles Dodgers":   { abbr:"LAD", color1:"#005A9C", color2:"#EF3E42", text:"#fff"    },
-  "Los Angeles Angels":    { abbr:"LAA", color1:"#BA0021", color2:"#003263", text:"#fff"    },
-  "Texas Rangers":         { abbr:"TEX", color1:"#003278", color2:"#C0111F", text:"#fff"    },
-  "Milwaukee Brewers":     { abbr:"MIL", color1:"#12284B", color2:"#FFC52F", text:"#FFC52F" },
-  "Las Vegas A's":         { abbr:"LV",  color1:"#003831", color2:"#EFB21E", text:"#EFB21E" },
-  "Chicago Cubs":          { abbr:"CHC", color1:"#0E3386", color2:"#CC3433", text:"#fff"    },
-  "San Diego Padres":      { abbr:"SD",  color1:"#2F241D", color2:"#FFC425", text:"#FFC425" },
-  "Baltimore Orioles":     { abbr:"BAL", color1:"#DF4601", color2:"#000000", text:"#fff"    },
-  "San Francisco Giants":  { abbr:"SF",  color1:"#FD5A1E", color2:"#27251F", text:"#fff"    },
-  "Cincinnati Reds":       { abbr:"CIN", color1:"#C6011F", color2:"#000000", text:"#fff"    },
+  "Kansas City Royals":    { abbr:"KC",  color1:"#174185", color2:"#C09A5B", text:"#C09A5B", owner:"Jon Gelber",      phone:"408.219.5578" },
+  "Seattle Mariners":      { abbr:"SEA", color1:"#005C5C", color2:"#C4CED4", text:"#C4CED4", owner:"Dirk Adkinson",   phone:"425.275.6981" },
+  "Los Angeles Dodgers":   { abbr:"LAD", color1:"#005A9C", color2:"#EF3E42", text:"#fff",    owner:"David Fatoki",    phone:"708.926.4528" },
+  "Los Angeles Angels":    { abbr:"LAA", color1:"#BA0021", color2:"#003263", text:"#fff",    owner:"Kirk Lacob",      phone:"650.380.4444" },
+  "Texas Rangers":         { abbr:"TEX", color1:"#003278", color2:"#C0111F", text:"#fff",    owner:"Jake Gavlick",    phone:"210.302.2044" },
+  "Milwaukee Brewers":     { abbr:"MIL", color1:"#12284B", color2:"#FFC52F", text:"#FFC52F", owner:"Jason Stein",     phone:"408.761.5148" },
+  "Las Vegas A's":         { abbr:"LV",  color1:"#003831", color2:"#EFB21E", text:"#EFB21E", owner:"Chris Poulson",   phone:"925.858.2215" },
+  "Chicago Cubs":          { abbr:"CHC", color1:"#0E3386", color2:"#CC3433", text:"#fff",    owner:"Drew Yoder",      phone:"510.693.4069" },
+  "San Diego Padres":      { abbr:"SD",  color1:"#2F241D", color2:"#FFC425", text:"#FFC425", owner:"Bert Ortiz",      phone:"925.918.0140" },
+  "Baltimore Orioles":     { abbr:"BAL", color1:"#DF4601", color2:"#000000", text:"#fff",    owner:"David Cortez",    phone:"510.508.5286" },
+  "San Francisco Giants":  { abbr:"SF",  color1:"#FD5A1E", color2:"#27251F", text:"#fff",    owner:"Mac Osborn",      phone:"650.862.0740" },
+  "Cincinnati Reds":       { abbr:"CIN", color1:"#C6011F", color2:"#000000", text:"#fff",    owner:"Sean Wasserman",  phone:"408.348.8256" },
 };
 
 // ─────────────────────────────────────────────
@@ -356,7 +358,7 @@ function logoHtml(meta, size, radius) {
 function buildSummary(teams, payouts) {
   const teamArr = Object.values(teams);
   const sortedPayroll = [...teamArr].sort((a,b) => (b.payrollReal+b.deadReal) - (a.payrollReal+a.deadReal));
-  const sortedDues    = [...teamArr].sort((a,b) => a.finalDues - b.finalDues);
+  const sortedDues    = [...teamArr].sort((a,b) => b.finalDues - a.finalDues);
 
   const payrollRows = sortedPayroll.map(t => {
     const meta  = TEAM_META[t.name] || { color1:"#888", abbr:"?" };
@@ -462,6 +464,7 @@ function expandTeam(i) {
       ${logoHtml(meta, 52, 10)}
       <div>
         <div class="p-name">${t.name}</div>
+        <div class="p-sub">${meta.owner} · ${meta.phone}</div>
         <div class="p-sub">2026 season · full financial breakdown</div>
       </div>
       <button class="close-btn" onclick="closePanel()">✕ close</button>
