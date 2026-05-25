@@ -162,28 +162,32 @@ const FINANCE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBW
 const HISTORY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1547680400&single=true&output=csv";
 
 // ─────────────────────────────────────────────
-//  CORS proxy wrapper — tries multiple proxies
-//  in sequence until one works
+//  Fetch CSV via multiple strategies
+//  Tries each in sequence until one returns valid CSV
 // ─────────────────────────────────────────────
-const PROXIES = [
-  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  url => `https://proxy.cors.sh/${url}`,
-];
-
-async function fetchWithProxy(url) {
-  for (const proxy of PROXIES) {
+async function fetchCSV(url) {
+  const strategies = [
+    () => fetch(url, { mode: "cors" }),
+    () => fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`),
+    () => fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`),
+    () => fetch(`https://thingproxy.freeboard.io/fetch/${url}`),
+    () => fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`),
+  ];
+  for (const strategy of strategies) {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8000);
-      const resp = await fetch(proxy(url), { signal: controller.signal });
+      const timer = setTimeout(() => controller.abort(), 10000);
+      const resp = await strategy();
       clearTimeout(timer);
-      if (resp.ok) return resp;
+      if (resp && resp.ok) {
+        const text = await resp.text();
+        if (text && text.length > 100 && !text.trim().startsWith("<")) return text;
+      }
     } catch(e) {
-      console.warn("Proxy failed, trying next...", e);
+      console.warn("Strategy failed, trying next...", e.message);
     }
   }
-  throw new Error("All proxies failed — check that your Google Sheet is published to web.");
+  throw new Error("All fetch strategies failed — check that your Google Sheet is published to web as CSV.");
 }
 
 // ─────────────────────────────────────────────
@@ -729,18 +733,16 @@ async function loadData() {
 
   try {
     // Fetch both CSVs in parallel
-    const finResp = await fetchWithProxy(FINANCE_CSV);
-    const finCSV  = await finResp.text();
+    const finCSV  = await fetchCSV(FINANCE_CSV);
     const teams   = parseFinance(parseCSV(finCSV));
     _teams = teams;
 
     // Load history separately — fall back gracefully if it fails
     try {
-      const histResp = await fetchWithProxy(HISTORY_CSV);
-      const histCSV  = await histResp.text();
+      const histCSV = await fetchCSV(HISTORY_CSV);
       HISTORY_FALLBACK = parseHistory(parseCSV(histCSV));
     } catch(e) {
-      console.warn("History tab failed to load, using fallback data", e);
+      console.warn("History tab failed to load", e);
     }
 
     const payouts = parsePayouts(parseCSV(finCSV));
