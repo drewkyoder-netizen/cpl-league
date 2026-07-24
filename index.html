@@ -106,6 +106,29 @@
   .net-dues-box .pm-val { font-size: 26px; }
 
 
+
+  /* ── Upcoming Free Agents ── */
+  .fa-wrap { margin-top: 2rem; margin-bottom: 1rem; }
+  .fa-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+  .fa-header h2 { font-size: 14px; font-weight: 500; color: var(--text2); letter-spacing: .05em; text-transform: uppercase; }
+  .fa-meta { font-size: 11px; color: var(--text3); }
+  .fa-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .fa-filter-btn { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 4px 12px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); transition: all .15s; }
+  .fa-filter-btn:hover { background: var(--bg2); }
+  .fa-filter-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .fa-table-wrap { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .fa-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .fa-table th { padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; border-bottom: 0.5px solid var(--border); background: var(--bg2); }
+  .fa-table td { padding: 8px 12px; border-bottom: 0.5px solid var(--border); color: var(--text); }
+  .fa-table tr:last-child td { border-bottom: none; }
+  .fa-table tr:hover td { background: var(--bg2); }
+  .fa-pos-badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; background: var(--bg3); color: var(--text2); min-width: 28px; text-align: center; }
+  .fa-to-note { font-size: 10px; color: var(--warn); margin-left: 3px; font-style: italic; }
+  .fa-contract-tag { font-size: 11px; color: var(--text3); }
+  .fa-team-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; flex-shrink: 0; }
+  .fa-group-row td { background: var(--bg2); font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; padding: 5px 12px; border-bottom: 0.5px solid var(--border); }
+  .fa-footnote { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
   /* ── CBA Section ── */
   .cba-wrap { margin-top: 2rem; margin-bottom: 2rem; }
   .cba-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
@@ -160,6 +183,7 @@
 const FINANCE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1845809075&single=true&output=csv";
 // TODO: Replace the URL below with your League History tab CSV URL once you publish it
 const HISTORY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1547680400&single=true&output=csv";
+const PLAYER_SALARY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1073495754&single=true&output=csv";
 
 // ─────────────────────────────────────────────
 //  Fetch CSV via multiple strategies
@@ -530,6 +554,1604 @@ function closePanel() {
 }
 
 
+
+
+// ─────────────────────────────────────────────
+//  Parse Player Salary tab → upcoming free agents
+//  Columns: Player, Salary, Team, Contract, Position
+//  FA contracts: 1, Arb3, Arb4, Ext 6
+//  TO contracts: 2-TO (asterisk — team option)
+// ─────────────────────────────────────────────
+const FA_CONTRACTS = new Set(["1","arb3","arb4","ext 6","ext6"]);
+const TO_CONTRACTS = new Set(["2-to"]);
+const POS_ORDER_FA = ["C","1B","2B","3B","SS","OF","SP","RP"];
+
+const TEAM_COLORS_FA = {
+  "Kansas City Royals":"#174185","Seattle Mariners":"#005C5C",
+  "Los Angeles Dodgers":"#005A9C","Los Angeles Angels":"#BA0021",
+  "Texas Rangers":"#003278","Milwaukee Brewers":"#12284B",
+  "Las Vegas A\'s":"#003831","Chicago Cubs":"#0E3386",
+  "San Diego Padres":"#2F241D","Baltimore Orioles":"#DF4601",
+  "San Francisco Giants":"#FD5A1E","Cincinnati Reds":"#C6011F",
+};
+
+function parsePlayerSalary(rows) {
+  const fa = [];
+  // Skip header row (row 0)
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[0] || !r[0].trim()) continue;
+    const name     = r[0].trim();
+    const salary   = parseMoney(r[1]);
+    const team     = r[2] ? r[2].trim() : "";
+    const contract = r[3] ? r[3].trim() : "";
+    const position = r[4] ? r[4].trim() : "";
+    const cLower   = contract.toLowerCase();
+
+    // Primary position (first before comma)
+    const primaryPos = position.split(",")[0].trim();
+
+    if (FA_CONTRACTS.has(cLower)) {
+      fa.push({ name, salary, team, contract, position, primaryPos, to: false });
+    } else if (TO_CONTRACTS.has(cLower)) {
+      fa.push({ name, salary, team, contract, position, primaryPos, to: true });
+    }
+  }
+  // Sort by position order then name
+  fa.sort((a,b) => {
+    const pa = POS_ORDER_FA.indexOf(a.primaryPos);
+    const pb = POS_ORDER_FA.indexOf(b.primaryPos);
+    const posA = pa === -1 ? 99 : pa;
+    const posB = pb === -1 ? 99 : pb;
+    if (posA !== posB) return posA - posB;
+    return a.name.localeCompare(b.name);
+  });
+  return fa;
+}
+
+let UPCOMING_FA_LIVE = [];
+
+// ─────────────────────────────────────────────
+//  Upcoming Free Agents (from Fantrax export)
+// ─────────────────────────────────────────────
+const UPCOMING_FA = [
+  {
+    "name": "Alejandro Kirk",
+    "pos": "C",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 2250000,
+    "to": false
+  },
+  {
+    "name": "Dillon Dingler",
+    "pos": "C",
+    "contract": "1",
+    "owner": "Los Angeles Dodgers",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "Ivan Herrera",
+    "pos": "C",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "J.T. Realmuto",
+    "pos": "C",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 2250000,
+    "to": false
+  },
+  {
+    "name": "Liam Hicks",
+    "pos": "C",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "Logan O'Hoppe",
+    "pos": "C",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 1250000,
+    "to": false
+  },
+  {
+    "name": "Ryan Jeffers",
+    "pos": "C",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 1500000,
+    "to": false
+  },
+  {
+    "name": "Salvador Perez",
+    "pos": "C",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 9000000,
+    "to": false
+  },
+  {
+    "name": "Shea Langeliers",
+    "pos": "C",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 3250000,
+    "to": false
+  },
+  {
+    "name": "Will Smith",
+    "pos": "C",
+    "contract": "1",
+    "owner": "Los Angeles Angels",
+    "salary": 12250000,
+    "to": false
+  },
+  {
+    "name": "Alec Bohm",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Los Angeles Dodgers",
+    "salary": 2250000,
+    "to": false
+  },
+  {
+    "name": "Alec Burleson",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "San Diego Padres",
+    "salary": 8750000,
+    "to": false
+  },
+  {
+    "name": "Andrew Vaughn",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 2250000,
+    "to": false
+  },
+  {
+    "name": "Bryce Harper",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 30500000,
+    "to": false
+  },
+  {
+    "name": "Casey Schmitt",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 2500000,
+    "to": false
+  },
+  {
+    "name": "Christian Encarnacion-Strand",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Los Angeles Angels",
+    "salary": 4750000,
+    "to": false
+  },
+  {
+    "name": "Curtis Mead",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "Ernie Clement",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 2000000,
+    "to": false
+  },
+  {
+    "name": "Freddie Freeman",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "San Diego Padres",
+    "salary": 26250000,
+    "to": false
+  },
+  {
+    "name": "Jake Bauers",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "San Francisco Giants",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "Josh Bell",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Los Angeles Dodgers",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Josh Naylor",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 2000000,
+    "to": false
+  },
+  {
+    "name": "Kazuma Okamoto",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 4000000,
+    "to": false
+  },
+  {
+    "name": "Kody Clemens",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 1500000,
+    "to": false
+  },
+  {
+    "name": "Matt Olson",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 29500000,
+    "to": false
+  },
+  {
+    "name": "Michael Busch",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "San Francisco Giants",
+    "salary": 5500000,
+    "to": false
+  },
+  {
+    "name": "Rafael Devers",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 18000000,
+    "to": false
+  },
+  {
+    "name": "Spencer Horwitz",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 2500000,
+    "to": false
+  },
+  {
+    "name": "Spencer Steer",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 6000000,
+    "to": false
+  },
+  {
+    "name": "T.J. Rumfield",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Los Angeles Dodgers",
+    "salary": 1750000,
+    "to": false
+  },
+  {
+    "name": "Willi Castro",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Willson Contreras",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 3500000,
+    "to": false
+  },
+  {
+    "name": "Yandy Diaz",
+    "pos": "1B",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 5250000,
+    "to": false
+  },
+  {
+    "name": "Brendan Donovan",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 9000000,
+    "to": false
+  },
+  {
+    "name": "Brice Turang",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "San Diego Padres",
+    "salary": 3250000,
+    "to": false
+  },
+  {
+    "name": "Fernando Tatis Jr.",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 33000000,
+    "to": false
+  },
+  {
+    "name": "Gleyber Torres",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "San Diego Padres",
+    "salary": 2500000,
+    "to": false
+  },
+  {
+    "name": "Javier Sanoja",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Jonathan India",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 4750000,
+    "to": false
+  },
+  {
+    "name": "Jordan Westburg",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Los Angeles Angels",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Jorge Polanco",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 3000000,
+    "to": false
+  },
+  {
+    "name": "Jose Altuve",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "San Francisco Giants",
+    "salary": 17500000,
+    "to": false
+  },
+  {
+    "name": "Ketel Marte",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 27000000,
+    "to": false
+  },
+  {
+    "name": "Marcus Semien",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 3000000,
+    "to": false
+  },
+  {
+    "name": "Mauricio Dubon",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "Nico Hoerner",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Los Angeles Dodgers",
+    "salary": 12250000,
+    "to": false
+  },
+  {
+    "name": "Otto Lopez",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 5750000,
+    "to": false
+  },
+  {
+    "name": "Sam Antonacci",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 2500000,
+    "to": false
+  },
+  {
+    "name": "Xavier Edwards",
+    "pos": "2B",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 3500000,
+    "to": false
+  },
+  {
+    "name": "Alex Bregman",
+    "pos": "3B",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 24250000,
+    "to": false
+  },
+  {
+    "name": "Carlos Correa",
+    "pos": "3B",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 6250000,
+    "to": false
+  },
+  {
+    "name": "Eugenio Suarez",
+    "pos": "3B",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 4000000,
+    "to": false
+  },
+  {
+    "name": "J.P. Crawford",
+    "pos": "3B",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Jose Ramirez",
+    "pos": "3B",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 31000000,
+    "to": false
+  },
+  {
+    "name": "Josh Jung",
+    "pos": "3B",
+    "contract": "1",
+    "owner": "San Francisco Giants",
+    "salary": 4000000,
+    "to": false
+  },
+  {
+    "name": "Bobby Witt Jr.",
+    "pos": "SS",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 40000000,
+    "to": false
+  },
+  {
+    "name": "Dansby Swanson",
+    "pos": "SS",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 1500000,
+    "to": false
+  },
+  {
+    "name": "Ezequiel Tovar",
+    "pos": "SS",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 5000000,
+    "to": false
+  },
+  {
+    "name": "Francisco Lindor",
+    "pos": "SS",
+    "contract": "1",
+    "owner": "Los Angeles Angels",
+    "salary": 28250000,
+    "to": false
+  },
+  {
+    "name": "Ha-seong Kim",
+    "pos": "SS",
+    "contract": "1",
+    "owner": "San Diego Padres",
+    "salary": 5000000,
+    "to": false
+  },
+  {
+    "name": "Mookie Betts",
+    "pos": "SS",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 40250000,
+    "to": false
+  },
+  {
+    "name": "Trevor Story",
+    "pos": "SS",
+    "contract": "1",
+    "owner": "Los Angeles Angels",
+    "salary": 3750000,
+    "to": false
+  },
+  {
+    "name": "Willy Adames",
+    "pos": "SS",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 1750000,
+    "to": false
+  },
+  {
+    "name": "Xander Bogaerts",
+    "pos": "SS",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 5000000,
+    "to": false
+  },
+  {
+    "name": "Adolis Garcia",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 2250000,
+    "to": false
+  },
+  {
+    "name": "Andrew Benintendi",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Anthony Santander",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 14250000,
+    "to": false
+  },
+  {
+    "name": "Bryan Reynolds",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 3500000,
+    "to": false
+  },
+  {
+    "name": "Byron Buxton",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Los Angeles Dodgers",
+    "salary": 1250000,
+    "to": false
+  },
+  {
+    "name": "Chandler Simpson",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 10000000,
+    "to": false
+  },
+  {
+    "name": "Dominic Canzone",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Los Angeles Angels",
+    "salary": 1250000,
+    "to": false
+  },
+  {
+    "name": "Heliot Ramos",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 3500000,
+    "to": false
+  },
+  {
+    "name": "Ian Happ",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 6750000,
+    "to": false
+  },
+  {
+    "name": "JJ Bleday",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 2250000,
+    "to": false
+  },
+  {
+    "name": "James Outman",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 3500000,
+    "to": false
+  },
+  {
+    "name": "Jarren Duran",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 2000000,
+    "to": false
+  },
+  {
+    "name": "Jesus Sanchez",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 1250000,
+    "to": false
+  },
+  {
+    "name": "Lawrence Butler",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 11250000,
+    "to": false
+  },
+  {
+    "name": "Lourdes Gurriel Jr.",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 4000000,
+    "to": false
+  },
+  {
+    "name": "Luis Robert Jr.",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "San Diego Padres",
+    "salary": 15750000,
+    "to": false
+  },
+  {
+    "name": "Mickey Moniak",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Ramon Laureano",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 1500000,
+    "to": false
+  },
+  {
+    "name": "Randy Arozarena",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 5500000,
+    "to": false
+  },
+  {
+    "name": "Ronald Acuna Jr.",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 50000000,
+    "to": false
+  },
+  {
+    "name": "Steven Kwan",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 10250000,
+    "to": false
+  },
+  {
+    "name": "TJ Friedl",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 3750000,
+    "to": false
+  },
+  {
+    "name": "Taylor Ward",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 3000000,
+    "to": false
+  },
+  {
+    "name": "Teoscar Hernandez",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 7000000,
+    "to": false
+  },
+  {
+    "name": "Tyler O'Neill",
+    "pos": "OF",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "Bailey Ober",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 1500000,
+    "to": false
+  },
+  {
+    "name": "Brandon Pfaadt",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 3000000,
+    "to": false
+  },
+  {
+    "name": "Braxton Garrett",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 1250000,
+    "to": false
+  },
+  {
+    "name": "Brayan Bello",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "San Francisco Giants",
+    "salary": 2250000,
+    "to": false
+  },
+  {
+    "name": "Carlos Rodon",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 7000000,
+    "to": false
+  },
+  {
+    "name": "Chris Bassitt",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "San Francisco Giants",
+    "salary": 2500000,
+    "to": false
+  },
+  {
+    "name": "Clarke Schmidt",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 2000000,
+    "to": false
+  },
+  {
+    "name": "Cody Ponce",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 3500000,
+    "to": false
+  },
+  {
+    "name": "Cristopher Sanchez",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 3000000,
+    "to": false
+  },
+  {
+    "name": "David Peterson",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Davis Martin",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "Drew Rasmussen",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Eduardo Rodriguez",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 1750000,
+    "to": false
+  },
+  {
+    "name": "Emerson Hancock",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 3000000,
+    "to": false
+  },
+  {
+    "name": "Foster Griffin",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 1750000,
+    "to": false
+  },
+  {
+    "name": "George Kirby",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 15250000,
+    "to": false
+  },
+  {
+    "name": "Jack Flaherty",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "San Diego Padres",
+    "salary": 8500000,
+    "to": false
+  },
+  {
+    "name": "Jacob deGrom",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 13750000,
+    "to": false
+  },
+  {
+    "name": "Jake Latz",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 2500000,
+    "to": false
+  },
+  {
+    "name": "Jameson Taillon",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 1500000,
+    "to": false
+  },
+  {
+    "name": "Jeffrey Springs",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "San Francisco Giants",
+    "salary": 2500000,
+    "to": false
+  },
+  {
+    "name": "Jesus Luzardo",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 9000000,
+    "to": false
+  },
+  {
+    "name": "Jose Berrios",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Justin Steele",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 11000000,
+    "to": false
+  },
+  {
+    "name": "Justin Wrobleski",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 1500000,
+    "to": false
+  },
+  {
+    "name": "Kevin Gausman",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Los Angeles Dodgers",
+    "salary": 10000000,
+    "to": false
+  },
+  {
+    "name": "Kyle Bradish",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 4000000,
+    "to": false
+  },
+  {
+    "name": "Kyle Harrison",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 2500000,
+    "to": false
+  },
+  {
+    "name": "Lance McCullers Jr.",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 3000000,
+    "to": false
+  },
+  {
+    "name": "Landen Roupp",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 2500000,
+    "to": false
+  },
+  {
+    "name": "Logan Allen",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 1250000,
+    "to": false
+  },
+  {
+    "name": "Max Fried",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 9250000,
+    "to": false
+  },
+  {
+    "name": "Merrill Kelly",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 4250000,
+    "to": false
+  },
+  {
+    "name": "Michael Soroka",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "Michael Wacha",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 1500000,
+    "to": false
+  },
+  {
+    "name": "Nick Martinez",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Nick Pivetta",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 8250000,
+    "to": false
+  },
+  {
+    "name": "Peter Lambert",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 1500000,
+    "to": false
+  },
+  {
+    "name": "Randy Vasquez",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 3000000,
+    "to": false
+  },
+  {
+    "name": "Ranger Suarez",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Los Angeles Dodgers",
+    "salary": 3250000,
+    "to": false
+  },
+  {
+    "name": "Reese Olson",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Reid Detmers",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 2000000,
+    "to": false
+  },
+  {
+    "name": "Ryan Weathers",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 2500000,
+    "to": false
+  },
+  {
+    "name": "Ryne Nelson",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Sandy Alcantara",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 10500000,
+    "to": false
+  },
+  {
+    "name": "Sean Manaea",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 1250000,
+    "to": false
+  },
+  {
+    "name": "Seth Lugo",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 1250000,
+    "to": false
+  },
+  {
+    "name": "Shane Bieber",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 4500000,
+    "to": false
+  },
+  {
+    "name": "Shota Imanaga",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 7250000,
+    "to": false
+  },
+  {
+    "name": "Tarik Skubal",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 17250000,
+    "to": false
+  },
+  {
+    "name": "Trevor Rogers",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 6750000,
+    "to": false
+  },
+  {
+    "name": "Tyler Mahle",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Will Warren",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 3000000,
+    "to": false
+  },
+  {
+    "name": "Yoendrys Gomez",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "San Diego Padres",
+    "salary": 1500000,
+    "to": false
+  },
+  {
+    "name": "Zac Gallen",
+    "pos": "SP",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 16000000,
+    "to": false
+  },
+  {
+    "name": "Adrian Morejon",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "San Francisco Giants",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Alex Lange",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 1750000,
+    "to": false
+  },
+  {
+    "name": "Andres Munoz",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 16000000,
+    "to": false
+  },
+  {
+    "name": "Aroldis Chapman",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 14000000,
+    "to": false
+  },
+  {
+    "name": "Bryan Baker",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "San Diego Padres",
+    "salary": 3250000,
+    "to": false
+  },
+  {
+    "name": "Camilo Doval",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Carlos Estevez",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Los Angeles Dodgers",
+    "salary": 4000000,
+    "to": false
+  },
+  {
+    "name": "Daniel Palencia",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "San Francisco Giants",
+    "salary": 15250000,
+    "to": false
+  },
+  {
+    "name": "Dennis Santana",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 9000000,
+    "to": false
+  },
+  {
+    "name": "Edwin Diaz",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Los Angeles Angels",
+    "salary": 21750000,
+    "to": false
+  },
+  {
+    "name": "Edwin Uceta",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Emilio Pagan",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 10000000,
+    "to": false
+  },
+  {
+    "name": "Gregory Soto",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 2500000,
+    "to": false
+  },
+  {
+    "name": "Jakob Junis",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Milwaukee Brewers",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "Jason Adam",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Los Angeles Angels",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Jeff Hoffman",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 15000000,
+    "to": false
+  },
+  {
+    "name": "Joel Kuhnel",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "San Francisco Giants",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "Jordan Romano",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Seattle Mariners",
+    "salary": 3500000,
+    "to": false
+  },
+  {
+    "name": "Kenley Jansen",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Cincinnati Reds",
+    "salary": 14000000,
+    "to": false
+  },
+  {
+    "name": "Louis Varland",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 2750000,
+    "to": false
+  },
+  {
+    "name": "Lucas Erceg",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 5250000,
+    "to": false
+  },
+  {
+    "name": "Luke Weaver",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Baltimore Orioles",
+    "salary": 1250000,
+    "to": false
+  },
+  {
+    "name": "Mark Leiter Jr.",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Mason Miller",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Chicago Cubs",
+    "salary": 18250000,
+    "to": false
+  },
+  {
+    "name": "Paul Sewald",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "San Diego Padres",
+    "salary": 4500000,
+    "to": false
+  },
+  {
+    "name": "Pete Fairbanks",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Los Angeles Dodgers",
+    "salary": 10000000,
+    "to": false
+  },
+  {
+    "name": "Raisel Iglesias",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "San Francisco Giants",
+    "salary": 7000000,
+    "to": false
+  },
+  {
+    "name": "Ryan Walker",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 8000000,
+    "to": false
+  },
+  {
+    "name": "Seranthony Dominguez",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Las Vegas A's",
+    "salary": 5000000,
+    "to": false
+  },
+  {
+    "name": "Tanner Scott",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Los Angeles Dodgers",
+    "salary": 12250000,
+    "to": false
+  },
+  {
+    "name": "Trevor Megill",
+    "pos": "RP",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 11250000,
+    "to": false
+  },
+  {
+    "name": "Joc Pederson",
+    "pos": "UT",
+    "contract": "1",
+    "owner": "Texas Rangers",
+    "salary": 1000000,
+    "to": false
+  },
+  {
+    "name": "Shohei Ohtani",
+    "pos": "UT",
+    "contract": "1",
+    "owner": "Kansas City Royals",
+    "salary": 57500000,
+    "to": false
+  },
+  {
+    "name": "Danny Jansen",
+    "pos": "C",
+    "contract": "2-TO",
+    "owner": "Kansas City Royals",
+    "salary": 1000000,
+    "to": true
+  },
+  {
+    "name": "Austin Riley",
+    "pos": "3B",
+    "contract": "2-TO",
+    "owner": "Texas Rangers",
+    "salary": 6250000,
+    "to": true
+  },
+  {
+    "name": "Corbin Carroll",
+    "pos": "OF",
+    "contract": "2-TO",
+    "owner": "San Francisco Giants",
+    "salary": 40750000,
+    "to": true
+  },
+  {
+    "name": "George Springer",
+    "pos": "OF",
+    "contract": "2-TO",
+    "owner": "Chicago Cubs",
+    "salary": 8750000,
+    "to": true
+  },
+  {
+    "name": "Chris Sale",
+    "pos": "SP",
+    "contract": "2-TO",
+    "owner": "Milwaukee Brewers",
+    "salary": 13750000,
+    "to": true
+  },
+  {
+    "name": "Luis Castillo",
+    "pos": "SP",
+    "contract": "2-TO",
+    "owner": "Los Angeles Angels",
+    "salary": 8000000,
+    "to": true
+  },
+  {
+    "name": "Cade Smith",
+    "pos": "RP",
+    "contract": "2-TO",
+    "owner": "Los Angeles Dodgers",
+    "salary": 25250000,
+    "to": true
+  },
+  {
+    "name": "David Bednar",
+    "pos": "RP",
+    "contract": "2-TO",
+    "owner": "Milwaukee Brewers",
+    "salary": 18750000,
+    "to": true
+  }
+];
+
+function buildFASection() {
+  const FA_DATA = UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA;
+  const positions = ["ALL",...POS_ORDER_FA];
+  const filterBtns = positions.map(p =>
+    `<button class="fa-filter-btn ${p==="ALL"?"active":""}" onclick="filterFA(\'${p}\')" id="fa-btn-${p}">${p==="ALL"?"All Positions":p}</button>`
+  ).join("");
+  const confirmed = FA_DATA.filter(p=>!p.to).length;
+  const pending   = FA_DATA.filter(p=>p.to).length;
+  return `
+    <div class="fa-wrap">
+      <div class="fa-header">
+        <h2>🔓 Upcoming Free Agents</h2>
+        <span class="fa-meta">${confirmed} confirmed · ${pending} pending team option decision</span>
+      </div>
+      <div class="fa-filters">${filterBtns}</div>
+      <div class="fa-table-wrap" id="fa-table-wrap">${renderFATable("ALL", FA_DATA)}</div>
+      <p class="fa-footnote">* Player has a 2-year team option — will only reach free agency if the team declines their option</p>
+    </div>
+  `;
+}
+
+function renderFATable(posFilter, faData) {
+  const data = faData || (UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA);
+  const filtered = data.filter(p => posFilter==="ALL" || (p.primaryPos||p.pos)===posFilter);
+  if (!filtered.length) return `<div style="padding:1.5rem;text-align:center;color:var(--text3);font-size:13px">No upcoming free agents at this position</div>`;
+  let html = `<table class="fa-table"><thead><tr><th>Player</th><th>Pos</th><th>Current Team</th><th>Salary</th><th>Contract</th></tr></thead><tbody>`;
+  let lastPos = null;
+  for (const p of filtered) {
+    if (posFilter==="ALL" && p.pos!==lastPos) {
+      const ppos = p.primaryPos||p.pos;
+    if (posFilter==="ALL" && ppos!==lastPos) {
+      html += `<tr class="fa-group-row"><td colspan="5">${ppos}</td></tr>`;
+      lastPos = ppos;
+    }
+    const color = TEAM_COLORS_FA[p.owner||p.team]||TEAM_COLORS_FA[p.team]||"#888";
+    const salary = p.salary>0 ? "$"+(p.salary/1e6).toFixed(2)+"M" : "—";
+    html += `<tr>
+      <td>${p.name}${p.to?` <span class="fa-to-note">*</span>`:""}</td>
+      <td><span class="fa-pos-badge">${p.primaryPos||p.pos||"?"}</span></td>
+      <td><span class="fa-team-dot" style="background:${color}"></span>${p.owner||p.team}</td>
+      <td>${salary}</td>
+      <td><span class="fa-contract-tag">${p.contract}</span></td>
+    </tr>`;
+  }
+  html += "</tbody></table>";
+  return html;
+}
+
+function filterFA(pos) {
+  document.querySelectorAll(".fa-filter-btn").forEach(b=>b.classList.remove("active"));
+  const btn = document.getElementById("fa-btn-"+pos);
+  if (btn) btn.classList.add("active");
+  document.getElementById("fa-table-wrap").innerHTML = renderFATable(pos);
+}
+
 // ─────────────────────────────────────────────
 //  CBA sections data
 // ─────────────────────────────────────────────
@@ -745,6 +2367,16 @@ async function loadData() {
       console.warn("History tab failed to load", e);
     }
 
+    // Load player salary tab for upcoming free agents
+    try {
+      const playerCSV = await fetchCSV(PLAYER_SALARY_CSV);
+      UPCOMING_FA_LIVE = parsePlayerSalary(parseCSV(playerCSV));
+      console.log("Loaded " + UPCOMING_FA_LIVE.length + " upcoming free agents from sheet");
+    } catch(e) {
+      console.warn("Player salary tab failed to load", e);
+      UPCOMING_FA_LIVE = [];
+    }
+
     const payouts = parsePayouts(parseCSV(finCSV));
 
     dashEl.innerHTML = `
@@ -752,6 +2384,7 @@ async function loadData() {
       <p class="sec-lbl">All 12 teams — click any card to expand</p>
       <div class="detail-panel" id="detail-panel"></div>
       <div class="teams-grid">${buildCards(teams)}</div>
+      ${buildFASection()}
       ${buildCBA()}
     `;
 
