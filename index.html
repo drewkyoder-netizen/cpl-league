@@ -587,14 +587,17 @@ function parsePlayerSalary(rows) {
     const contract = r[3] ? r[3].trim() : "";
     const position = r[4] ? r[4].trim() : "";
     const cLower   = contract.toLowerCase();
+    const isFA     = FA_CONTRACTS.has(cLower);
+    const isTO     = TO_CONTRACTS.has(cLower);
 
-    // Primary position (first before comma)
-    const primaryPos = position.split(",")[0].trim();
+    if (!isFA && !isTO) continue;
 
-    if (FA_CONTRACTS.has(cLower)) {
-      fa.push({ name, salary, team, contract, position, primaryPos, to: false });
-    } else if (TO_CONTRACTS.has(cLower)) {
-      fa.push({ name, salary, team, contract, position, primaryPos, to: true });
+    // Expand multi-position players — add one entry per position
+    const positions = position.split(",").map(p => p.trim()).filter(Boolean);
+    if (positions.length === 0) positions.push("?");
+
+    for (const pos of positions) {
+      fa.push({ name, salary, team, contract, position: pos, primaryPos: pos, to: isTO });
     }
   }
   // Sort by position order then name
@@ -2122,22 +2125,20 @@ function renderFATable(posFilter, faData) {
   const data = faData || (UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA);
   const filtered = data.filter(p => posFilter === "ALL" || (p.primaryPos || p.pos) === posFilter);
   if (!filtered.length) return `<div style="padding:1.5rem;text-align:center;color:var(--text3);font-size:13px">No upcoming free agents at this position</div>`;
-  let html = `<table class="fa-table"><thead><tr><th>Player</th><th>Pos</th><th>Current Team</th><th>Salary</th><th>Contract</th></tr></thead><tbody>`;
+  let html = `<table class="fa-table"><thead><tr><th>Player</th><th>Pos</th><th>Salary</th></tr></thead><tbody>`;
   let lastPos = null;
   for (const p of filtered) {
     const ppos = p.primaryPos || p.pos || "?";
     if (posFilter === "ALL" && ppos !== lastPos) {
-      html += `<tr class="fa-group-row"><td colspan="5">${ppos}</td></tr>`;
+      html += `<tr class="fa-group-row"><td colspan="3">${ppos}</td></tr>`;
       lastPos = ppos;
     }
-    const color = TEAM_COLORS_FA[p.team] || TEAM_COLORS_FA[p.owner] || "#888";
     const salary = p.salary > 0 ? "$" + (p.salary / 1e6).toFixed(2) + "M" : "—";
+    const toLabel = p.to ? ` * <em class="fa-to-note">Team Option</em>` : "";
     html += `<tr>
-      <td>${p.name}${p.to ? ` <span class="fa-to-note">*</span>` : ""}</td>
+      <td>${p.name}${toLabel}</td>
       <td><span class="fa-pos-badge">${ppos}</span></td>
-      <td><span class="fa-team-dot" style="background:${color}"></span>${p.team || p.owner}</td>
       <td>${salary}</td>
-      <td><span class="fa-contract-tag">${p.contract}</span></td>
     </tr>`;
   }
   html += "</tbody></table>";
