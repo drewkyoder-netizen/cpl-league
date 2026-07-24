@@ -2100,12 +2100,28 @@ const UPCOMING_FA = [
   }
 ];
 
+const POS_COLORS = {
+  "ALL": { bg:"#1F3864", text:"#ffffff" },
+  "C":   { bg:"#2563EB", text:"#ffffff" },
+  "1B":  { bg:"#16A34A", text:"#ffffff" },
+  "2B":  { bg:"#059669", text:"#ffffff" },
+  "3B":  { bg:"#D97706", text:"#ffffff" },
+  "SS":  { bg:"#DC2626", text:"#ffffff" },
+  "OF":  { bg:"#7C3AED", text:"#ffffff" },
+  "SP":  { bg:"#0891B2", text:"#ffffff" },
+  "RP":  { bg:"#BE185D", text:"#ffffff" },
+};
+
 function buildFASection() {
   const FA_DATA = UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA;
   const positions = ["ALL",...POS_ORDER_FA];
-  const filterBtns = positions.map(p =>
-    `<button class="fa-filter-btn ${p==="ALL"?"active":""}" onclick="filterFA(\'${p}\')" id="fa-btn-${p}">${p==="ALL"?"All Positions":p}</button>`
-  ).join("");
+  const filterBtns = positions.map(p => {
+    const col = POS_COLORS[p] || { bg:"#888", text:"#fff" };
+    return `<button class="fa-filter-btn ${p==="ALL"?"active":""}" onclick="filterFA(\'${p}\')" id="fa-btn-${p}"
+      data-bg="${col.bg}" data-text="${col.text}"
+      style="${p==="ALL"?"background:"+col.bg+";color:"+col.text+";border-color:"+col.bg+"":""}"
+    >${p==="ALL"?"All Positions":p}</button>`;
+  }).join("");
   const confirmed = FA_DATA.filter(p=>!p.to).length;
   const pending   = FA_DATA.filter(p=>p.to).length;
   return `
@@ -2123,21 +2139,43 @@ function buildFASection() {
 
 function renderFATable(posFilter, faData) {
   const data = faData || (UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA);
-  const filtered = data.filter(p => posFilter === "ALL" || (p.primaryPos || p.pos) === posFilter);
+  let filtered = data.filter(p => posFilter === "ALL" || (p.primaryPos || p.pos) === posFilter);
   if (!filtered.length) return `<div style="padding:1.5rem;text-align:center;color:var(--text3);font-size:13px">No upcoming free agents at this position</div>`;
-  let html = `<table class="fa-table"><thead><tr><th>Player</th><th>Pos</th><th>Salary</th></tr></thead><tbody>`;
-  let lastPos = null;
+
+  // ALL tab: sort by salary desc (dedupe by name+pos so multi-pos players don\'t stack)
+  // Position tab: already sorted by name from parsePlayerSalary
+  if (posFilter === "ALL") {
+    // Dedupe — in ALL view show each player only once, highest salary sort
+    const seen = new Set();
+    const deduped = [];
+    // Sort salary desc first
+    const bySalary = [...filtered].sort((a,b) => b.salary - a.salary);
+    for (const p of bySalary) {
+      if (!seen.has(p.name)) {
+        seen.add(p.name);
+        deduped.push(p);
+      }
+    }
+    filtered = deduped;
+  }
+
+  const posColor = POS_COLORS[posFilter] || { bg:"#888", text:"#fff" };
+  const headerAccent = posFilter !== "ALL" ? `style="background:${posColor.bg}22;color:${posColor.bg}"` : "";
+
+  let html = `<table class="fa-table"><thead><tr>
+    <th>Player</th>
+    <th ${posFilter !== "ALL" ? headerAccent : ""}>Pos</th>
+    <th>Current Salary</th>
+  </tr></thead><tbody>`;
+
   for (const p of filtered) {
     const ppos = p.primaryPos || p.pos || "?";
-    if (posFilter === "ALL" && ppos !== lastPos) {
-      html += `<tr class="fa-group-row"><td colspan="3">${ppos}</td></tr>`;
-      lastPos = ppos;
-    }
+    const posCol = POS_COLORS[ppos] || { bg:"#888", text:"#fff" };
     const salary = p.salary > 0 ? "$" + (p.salary / 1e6).toFixed(2) + "M" : "—";
     const toLabel = p.to ? ` * <em class="fa-to-note">Team Option</em>` : "";
     html += `<tr>
       <td>${p.name}${toLabel}</td>
-      <td><span class="fa-pos-badge">${ppos}</span></td>
+      <td><span class="fa-pos-badge" style="background:${posCol.bg}22;color:${posCol.bg};font-weight:600">${ppos}</span></td>
       <td>${salary}</td>
     </tr>`;
   }
@@ -2146,9 +2184,21 @@ function renderFATable(posFilter, faData) {
 }
 
 function filterFA(pos) {
-  document.querySelectorAll(".fa-filter-btn").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".fa-filter-btn").forEach(b => {
+    b.classList.remove("active");
+    b.style.background = "";
+    b.style.color = "";
+    b.style.borderColor = "";
+  });
   const btn = document.getElementById("fa-btn-"+pos);
-  if (btn) btn.classList.add("active");
+  if (btn) {
+    btn.classList.add("active");
+    const bg   = btn.getAttribute("data-bg") || "#1F3864";
+    const text = btn.getAttribute("data-text") || "#fff";
+    btn.style.background   = bg;
+    btn.style.color        = text;
+    btn.style.borderColor  = bg;
+  }
   document.getElementById("fa-table-wrap").innerHTML = renderFATable(pos);
 }
 
