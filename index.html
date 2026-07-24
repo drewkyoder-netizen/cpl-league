@@ -2120,23 +2120,22 @@ function buildFASection() {
 
 function renderFATable(posFilter, faData) {
   const data = faData || (UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA);
-  const filtered = data.filter(p => posFilter==="ALL" || (p.primaryPos||p.pos)===posFilter);
+  const filtered = data.filter(p => posFilter === "ALL" || (p.primaryPos || p.pos) === posFilter);
   if (!filtered.length) return `<div style="padding:1.5rem;text-align:center;color:var(--text3);font-size:13px">No upcoming free agents at this position</div>`;
   let html = `<table class="fa-table"><thead><tr><th>Player</th><th>Pos</th><th>Current Team</th><th>Salary</th><th>Contract</th></tr></thead><tbody>`;
   let lastPos = null;
   for (const p of filtered) {
-    if (posFilter==="ALL" && p.pos!==lastPos) {
-      const ppos = p.primaryPos||p.pos;
-    if (posFilter==="ALL" && ppos!==lastPos) {
+    const ppos = p.primaryPos || p.pos || "?";
+    if (posFilter === "ALL" && ppos !== lastPos) {
       html += `<tr class="fa-group-row"><td colspan="5">${ppos}</td></tr>`;
       lastPos = ppos;
     }
-    const color = TEAM_COLORS_FA[p.owner||p.team]||TEAM_COLORS_FA[p.team]||"#888";
-    const salary = p.salary>0 ? "$"+(p.salary/1e6).toFixed(2)+"M" : "—";
+    const color = TEAM_COLORS_FA[p.team] || TEAM_COLORS_FA[p.owner] || "#888";
+    const salary = p.salary > 0 ? "$" + (p.salary / 1e6).toFixed(2) + "M" : "—";
     html += `<tr>
-      <td>${p.name}${p.to?` <span class="fa-to-note">*</span>`:""}</td>
-      <td><span class="fa-pos-badge">${p.primaryPos||p.pos||"?"}</span></td>
-      <td><span class="fa-team-dot" style="background:${color}"></span>${p.owner||p.team}</td>
+      <td>${p.name}${p.to ? ` <span class="fa-to-note">*</span>` : ""}</td>
+      <td><span class="fa-pos-badge">${ppos}</span></td>
+      <td><span class="fa-team-dot" style="background:${color}"></span>${p.team || p.owner}</td>
       <td>${salary}</td>
       <td><span class="fa-contract-tag">${p.contract}</span></td>
     </tr>`;
