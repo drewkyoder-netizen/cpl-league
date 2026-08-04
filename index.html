@@ -2283,35 +2283,61 @@ function parseRulesChanges(rows) {
 
 function parseFormResponses(rows) {
   // Each column (after Timestamp and Email) is a proposal question
-  // Each row is one owner's vote
+  // Each row is one owner's vote — Timestamp in col 0, Email in last col
   if (rows.length < 2) return [];
   const headers = rows[0];
+
+  // First pass: group rows by year from Timestamp column
+  // Timestamp format: "11/2/2025 20:41:56" or "2025-11-02 20:41:56"
+  function extractYear(ts) {
+    if (!ts) return "Unknown";
+    // Try MM/DD/YYYY format
+    const mdy = ts.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);
+    if (mdy) return mdy[1];
+    // Try YYYY-MM-DD format
+    const ymd = ts.match(/^(\d{4})-/);
+    if (ymd) return ymd[1];
+    // Try any 4-digit year
+    const yr = ts.match(/\b(20\d{2})\b/);
+    if (yr) return yr[1];
+    return "Unknown";
+  }
+
+  // Build a map of year -> row indices
+  const yearRows = {};
+  for (let row = 1; row < rows.length; row++) {
+    const ts = rows[row][0] || "";
+    const year = extractYear(ts);
+    if (!yearRows[year]) yearRows[year] = [];
+    yearRows[year].push(row);
+  }
+
+  // For each year, tally votes per proposal column
   const proposals = [];
+  const years = Object.keys(yearRows).sort();
 
-  // Headers 1 through headers.length-2 are proposals (last col is email)
-  for (let col = 1; col < headers.length - 1; col++) {
-    const question = headers[col].trim();
-    // Extract category from question (before the colon)
-    const colonIdx = question.indexOf(":");
-    const category = colonIdx > -1 ? question.substring(0, colonIdx).trim() : "Other";
-    const proposal = colonIdx > -1 ? question.substring(colonIdx + 1).trim() : question;
+  for (const year of years) {
+    const rowIdxs = yearRows[year];
+    // Headers 1 through headers.length-2 are proposals (last col is email)
+    for (let col = 1; col < headers.length - 1; col++) {
+      const question = headers[col].trim();
+      const colonIdx = question.indexOf(":");
+      const category = colonIdx > -1 ? question.substring(0, colonIdx).trim() : "Other";
+      const proposal = colonIdx > -1 ? question.substring(colonIdx + 1).trim() : question;
 
-    let votesFor = 0, votesAgainst = 0;
-    const votes = [];
-    for (let row = 1; row < rows.length; row++) {
-      const vote = rows[row][col] ? rows[row][col].trim() : "";
-      const email = rows[row][headers.length - 1] || "";
-      if (vote.toLowerCase().startsWith("yes")) votesFor++;
-      else if (vote.toLowerCase().startsWith("no")) votesAgainst++;
-      votes.push({ email: email.split("@")[0], vote });
+      let votesFor = 0, votesAgainst = 0;
+      for (const rowIdx of rowIdxs) {
+        const vote = rows[rowIdx][col] ? rows[rowIdx][col].trim() : "";
+        if (vote.toLowerCase().startsWith("yes")) votesFor++;
+        else if (vote.toLowerCase().startsWith("no")) votesAgainst++;
+      }
+      const total = votesFor + votesAgainst;
+      const passed = votesFor >= 8;
+      proposals.push({
+        category, proposal, votesFor, votesAgainst, total,
+        passed, status: passed ? "Passed" : "Failed", year,
+      });
     }
-    const total = votesFor + votesAgainst;
-    const passed = votesFor >= 8; // CPL rule: 8/12 to pass
-    proposals.push({
-      category, proposal, votesFor, votesAgainst, total,
-      passed, status: passed ? "Passed" : "Failed",
-      year: "2025", // Form responses are from Nov 2025 Winter Meetings
-    });
   }
   return proposals;
 }
@@ -2377,33 +2403,35 @@ function buildRulesSection() {
     html += `</div>`;
   }
 
-  // ── 2025 Winter Meetings results ──
+  // ── Historical vote results grouped by year (most recent first) ──
   if (history.length > 0) {
-    const passed = history.filter(r => r.passed);
-    const failed = history.filter(r => !r.passed);
-
-    html += `<div class="rules-year-group">
-      <div class="rules-year-label">📅 2025 Winter Meetings — Vote Results</div>`;
-
-    // Passed first
-    for (const r of [...passed, ...failed]) {
-      const pct = r.total > 0 ? Math.round(r.votesFor / r.total * 100) : 0;
-      const barColor = r.passed ? "var(--good)" : "var(--danger)";
-      html += `<div class="rules-card">
-        <div class="rules-card-top">
-          <span class="rules-category ${catClass(r.category)}">${r.category}</span>
-          <span class="rules-proposal">${r.proposal}</span>
-          <span class="rules-status ${r.passed ? "passed" : "failed"}">${r.passed ? "✓ Passed" : "✗ Failed"}</span>
-        </div>
-        <div class="rules-votes">
-          <span class="rules-vote-for">✓ ${r.votesFor} for</span>
-          <span class="rules-vote-against">✗ ${r.votesAgainst} against</span>
-          <span style="color:var(--text3);font-size:11px">(needed 8 of 12)</span>
-        </div>
-        <div class="rules-vote-bar"><div class="rules-vote-fill" style="width:${pct}%;background:${barColor}"></div></div>
-      </div>`;
+    const years = [...new Set(history.map(r => r.year))].sort((a,b) => b.localeCompare(a));
+    for (const year of years) {
+      const yearItems = history.filter(r => r.year === year);
+      const passed = yearItems.filter(r => r.passed);
+      const failed = yearItems.filter(r => !r.passed);
+      html += `<div class="rules-year-group">
+        <div class="rules-year-label">📅 ${year} Winter Meetings — Vote Results (${passed.length} passed · ${failed.length} failed)</div>`;
+      // Passed first, then failed
+      for (const r of [...passed, ...failed]) {
+        const pct = r.total > 0 ? Math.round(r.votesFor / r.total * 100) : 0;
+        const barColor = r.passed ? "var(--good)" : "var(--danger)";
+        html += `<div class="rules-card">
+          <div class="rules-card-top">
+            <span class="rules-category ${catClass(r.category)}">${r.category}</span>
+            <span class="rules-proposal">${r.proposal}</span>
+            <span class="rules-status ${r.passed ? "passed" : "failed"}">${r.passed ? "✓ Passed" : "✗ Failed"}</span>
+          </div>
+          <div class="rules-votes">
+            <span class="rules-vote-for">✓ ${r.votesFor} for</span>
+            <span class="rules-vote-against">✗ ${r.votesAgainst} against</span>
+            <span style="color:var(--text3);font-size:11px">(needed 8 of 12)</span>
+          </div>
+          <div class="rules-vote-bar"><div class="rules-vote-fill" style="width:${pct}%;background:${barColor}"></div></div>
+        </div>`;
+      }
+      html += `</div>`;
     }
-    html += `</div>`;
   }
 
   html += `</div></div>`;
