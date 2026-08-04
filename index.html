@@ -129,6 +129,44 @@
   .fa-group-row td { background: var(--bg2); font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; padding: 5px 12px; border-bottom: 0.5px solid var(--border); }
   .fa-footnote { font-size: 11px; color: var(--text3); margin-top: 6px; }
 
+  /* ── Collapsible section toggle ── */
+  .section-toggle-btn { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 4px 12px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); margin-left: auto; }
+  .section-toggle-btn:hover { background: var(--bg2); }
+  .section-collapsible { overflow: hidden; transition: max-height 0.3s ease; }
+  .section-collapsible.collapsed { display: none; }
+
+  /* ── Rules Changes Section ── */
+  .rules-wrap { margin-top: 2rem; margin-bottom: 1rem; }
+  .rules-header { display: flex; align-items: center; gap: 10px; margin-bottom: .75rem; flex-wrap: wrap; }
+  .rules-header h2 { font-size: 14px; font-weight: 500; color: var(--text2); letter-spacing: .05em; text-transform: uppercase; }
+  .rules-year-group { margin-bottom: 1rem; }
+  .rules-year-label { font-size: 12px; font-weight: 500; color: var(--text2); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 0.5px solid var(--border); }
+  .rules-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem; margin-bottom: 8px; }
+  .rules-card-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+  .rules-category { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+  .rules-proposal { font-size: 13px; font-weight: 500; color: var(--text); flex: 1; }
+  .rules-status { font-size: 11px; font-weight: 500; padding: 2px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .rules-status.passed { background: #dcfce7; color: #166534; }
+  .rules-status.failed { background: #fee2e2; color: #991b1b; }
+  .rules-status.pending { background: #fef9c3; color: #854d0e; }
+  .rules-status.proposed { background: #e0f2fe; color: #075985; }
+  .rules-votes { display: flex; gap: 12px; margin-top: 6px; font-size: 12px; }
+  .rules-vote-for { color: var(--good); font-weight: 500; }
+  .rules-vote-against { color: var(--danger); font-weight: 500; }
+  .rules-rationale { font-size: 12px; color: var(--text2); margin-top: 6px; line-height: 1.5; }
+  .rules-proposed-by { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .cat-trading  { background: #dbeafe; color: #1e40af; }
+  .cat-scoring  { background: #fce7f3; color: #9d174d; }
+  .cat-roster   { background: #d1fae5; color: #065f46; }
+  .cat-fines    { background: #fee2e2; color: #991b1b; }
+  .cat-fees     { background: #fef3c7; color: #92400e; }
+  .cat-draft    { background: #ede9fe; color: #4c1d95; }
+  .cat-free-agency { background: #e0f2fe; color: #075985; }
+  .cat-schedule { background: #f3f4f6; color: #374151; }
+  .cat-other    { background: #f3f4f6; color: #374151; }
+  .rules-vote-bar { height: 6px; border-radius: 3px; background: var(--bg2); overflow: hidden; margin-top: 6px; }
+  .rules-vote-fill { height: 100%; border-radius: 3px; background: var(--good); }
+
   /* ── CBA Section ── */
   .cba-wrap { margin-top: 2rem; margin-bottom: 2rem; }
   .cba-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
@@ -184,6 +222,8 @@ const FINANCE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBW
 // TODO: Replace the URL below with your League History tab CSV URL once you publish it
 const HISTORY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1547680400&single=true&output=csv";
 const PLAYER_SALARY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1073495754&single=true&output=csv";
+const RULES_CSV     = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1416486223&single=true&output=csv";
+const FORM_RESP_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=809192862&single=true&output=csv";
 
 // ─────────────────────────────────────────────
 //  Fetch CSV via multiple strategies
@@ -2129,10 +2169,13 @@ function buildFASection() {
       <div class="fa-header">
         <h2>🔓 Upcoming Free Agents</h2>
         <span class="fa-meta">${confirmed} confirmed · ${pending} pending team option decision</span>
+        <button class="section-toggle-btn" id="fa-toggle-btn" onclick="toggleFASection()">▶ Show</button>
       </div>
-      <div class="fa-filters">${filterBtns}</div>
-      <div class="fa-table-wrap" id="fa-table-wrap">${renderFATable("ALL", FA_DATA)}</div>
-      <p class="fa-footnote">* Player has a 2-year team option — will only reach free agency if the team declines their option</p>
+      <div class="section-collapsible collapsed" id="fa-collapsible">
+        <div class="fa-filters">${filterBtns}</div>
+        <div class="fa-table-wrap" id="fa-table-wrap">${renderFATable("ALL", FA_DATA)}</div>
+        <p class="fa-footnote">* Player has a 2-year team option — will only reach free agency if the team declines their option</p>
+      </div>
     </div>
   `;
 }
@@ -2183,6 +2226,14 @@ function renderFATable(posFilter, faData) {
   return html;
 }
 
+function toggleFASection() {
+  const el  = document.getElementById("fa-collapsible");
+  const btn = document.getElementById("fa-toggle-btn");
+  const isCollapsed = el.classList.contains("collapsed");
+  el.classList.toggle("collapsed", !isCollapsed);
+  btn.textContent = isCollapsed ? "▼ Hide" : "▶ Show";
+}
+
 function filterFA(pos) {
   document.querySelectorAll(".fa-filter-btn").forEach(b => {
     b.classList.remove("active");
@@ -2200,6 +2251,171 @@ function filterFA(pos) {
     btn.style.borderColor  = bg;
   }
   document.getElementById("fa-table-wrap").innerHTML = renderFATable(pos);
+}
+
+
+// ─────────────────────────────────────────────
+//  Rules Changes data
+// ─────────────────────────────────────────────
+let RULES_DATA     = { proposed: [], history: [] };
+let FORM_RESP_DATA = [];
+
+function parseRulesChanges(rows) {
+  const proposed = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[0] && !r[1]) continue;
+    proposed.push({
+      category:    r[0] ? r[0].trim() : "",
+      proposal:    r[1] ? r[1].trim() : "",
+      currentRule: r[2] ? r[2].trim() : "",
+      proposed:    r[3] ? r[3].trim() : "",
+      proposedBy:  r[4] ? r[4].trim() : "",
+      rationale:   r[5] ? r[5].trim() : "",
+      status:      r[6] ? r[6].trim() : "Proposed",
+      votesFor:    r[7] ? parseInt(r[7]) || 0 : 0,
+      votesAgainst:r[8] ? parseInt(r[8]) || 0 : 0,
+      result:      r[9] ? r[9].trim() : "",
+    });
+  }
+  return proposed;
+}
+
+function parseFormResponses(rows) {
+  // Each column (after Timestamp and Email) is a proposal question
+  // Each row is one owner's vote
+  if (rows.length < 2) return [];
+  const headers = rows[0];
+  const proposals = [];
+
+  // Headers 1 through headers.length-2 are proposals (last col is email)
+  for (let col = 1; col < headers.length - 1; col++) {
+    const question = headers[col].trim();
+    // Extract category from question (before the colon)
+    const colonIdx = question.indexOf(":");
+    const category = colonIdx > -1 ? question.substring(0, colonIdx).trim() : "Other";
+    const proposal = colonIdx > -1 ? question.substring(colonIdx + 1).trim() : question;
+
+    let votesFor = 0, votesAgainst = 0;
+    const votes = [];
+    for (let row = 1; row < rows.length; row++) {
+      const vote = rows[row][col] ? rows[row][col].trim() : "";
+      const email = rows[row][headers.length - 1] || "";
+      if (vote.toLowerCase().startsWith("yes")) votesFor++;
+      else if (vote.toLowerCase().startsWith("no")) votesAgainst++;
+      votes.push({ email: email.split("@")[0], vote });
+    }
+    const total = votesFor + votesAgainst;
+    const passed = votesFor >= 8; // CPL rule: 8/12 to pass
+    proposals.push({
+      category, proposal, votesFor, votesAgainst, total,
+      passed, status: passed ? "Passed" : "Failed",
+      year: "2025", // Form responses are from Nov 2025 Winter Meetings
+    });
+  }
+  return proposals;
+}
+
+function catClass(cat) {
+  const c = cat.toLowerCase();
+  if (c.includes("trad")) return "cat-trading";
+  if (c.includes("scor")) return "cat-scoring";
+  if (c.includes("roster")) return "cat-roster";
+  if (c.includes("fine")) return "cat-fines";
+  if (c.includes("fee")) return "cat-fees";
+  if (c.includes("draft")) return "cat-draft";
+  if (c.includes("free") || c.includes("agency")) return "cat-free-agency";
+  if (c.includes("schedul") || c.includes("season")) return "cat-schedule";
+  return "cat-other";
+}
+
+function statusClass(s) {
+  const sl = (s || "").toLowerCase();
+  if (sl.includes("pass")) return "passed";
+  if (sl.includes("fail")) return "failed";
+  if (sl.includes("pend")) return "pending";
+  return "proposed";
+}
+
+function buildRulesSection() {
+  const proposed  = RULES_DATA.proposed;
+  const history   = FORM_RESP_DATA;
+
+  let html = `
+    <div class="rules-wrap">
+      <div class="rules-header">
+        <h2>📋 Rules Changes</h2>
+        <button class="section-toggle-btn" id="rules-toggle-btn" onclick="toggleRulesSection()">▶ Show</button>
+      </div>
+      <div class="section-collapsible collapsed" id="rules-collapsible">
+  `;
+
+  // ── Pending / Proposed section ──
+  if (proposed.length > 0) {
+    html += `<div class="rules-year-group">
+      <div class="rules-year-label">🔵 Pending Proposals</div>`;
+    for (const r of proposed) {
+      const total = (r.votesFor || 0) + (r.votesAgainst || 0);
+      const pct   = total > 0 ? Math.round(r.votesFor / total * 100) : 0;
+      html += `<div class="rules-card">
+        <div class="rules-card-top">
+          <span class="rules-category ${catClass(r.category)}">${r.category}</span>
+          <span class="rules-proposal">${r.proposal}</span>
+          <span class="rules-status ${statusClass(r.status)}">${r.status || "Proposed"}</span>
+        </div>
+        ${r.rationale ? `<div class="rules-rationale">${r.rationale}</div>` : ""}
+        ${r.proposedBy ? `<div class="rules-proposed-by">Proposed by: ${r.proposedBy}</div>` : ""}
+        ${total > 0 ? `
+          <div class="rules-votes">
+            <span class="rules-vote-for">✓ ${r.votesFor} for</span>
+            <span class="rules-vote-against">✗ ${r.votesAgainst} against</span>
+          </div>
+          <div class="rules-vote-bar"><div class="rules-vote-fill" style="width:${pct}%"></div></div>
+        ` : ""}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  // ── 2025 Winter Meetings results ──
+  if (history.length > 0) {
+    const passed = history.filter(r => r.passed);
+    const failed = history.filter(r => !r.passed);
+
+    html += `<div class="rules-year-group">
+      <div class="rules-year-label">📅 2025 Winter Meetings — Vote Results</div>`;
+
+    // Passed first
+    for (const r of [...passed, ...failed]) {
+      const pct = r.total > 0 ? Math.round(r.votesFor / r.total * 100) : 0;
+      const barColor = r.passed ? "var(--good)" : "var(--danger)";
+      html += `<div class="rules-card">
+        <div class="rules-card-top">
+          <span class="rules-category ${catClass(r.category)}">${r.category}</span>
+          <span class="rules-proposal">${r.proposal}</span>
+          <span class="rules-status ${r.passed ? "passed" : "failed"}">${r.passed ? "✓ Passed" : "✗ Failed"}</span>
+        </div>
+        <div class="rules-votes">
+          <span class="rules-vote-for">✓ ${r.votesFor} for</span>
+          <span class="rules-vote-against">✗ ${r.votesAgainst} against</span>
+          <span style="color:var(--text3);font-size:11px">(needed 8 of 12)</span>
+        </div>
+        <div class="rules-vote-bar"><div class="rules-vote-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  html += `</div></div>`;
+  return html;
+}
+
+function toggleRulesSection() {
+  const el  = document.getElementById("rules-collapsible");
+  const btn = document.getElementById("rules-toggle-btn");
+  const isCollapsed = el.classList.contains("collapsed");
+  el.classList.toggle("collapsed", !isCollapsed);
+  btn.textContent = isCollapsed ? "▼ Hide" : "▶ Show";
 }
 
 // ─────────────────────────────────────────────
@@ -2427,6 +2643,20 @@ async function loadData() {
       UPCOMING_FA_LIVE = [];
     }
 
+    // Load rules changes tabs
+    try {
+      const rulesCSV = await fetchCSV(RULES_CSV);
+      RULES_DATA.proposed = parseRulesChanges(parseCSV(rulesCSV));
+    } catch(e) {
+      console.warn("Rules changes tab failed to load", e);
+    }
+    try {
+      const formCSV = await fetchCSV(FORM_RESP_CSV);
+      FORM_RESP_DATA = parseFormResponses(parseCSV(formCSV));
+    } catch(e) {
+      console.warn("Form responses tab failed to load", e);
+    }
+
     const payouts = parsePayouts(parseCSV(finCSV));
 
     dashEl.innerHTML = `
@@ -2435,6 +2665,7 @@ async function loadData() {
       <div class="detail-panel" id="detail-panel"></div>
       <div class="teams-grid">${buildCards(teams)}</div>
       ${buildFASection()}
+      ${buildRulesSection()}
       ${buildCBA()}
     `;
 
