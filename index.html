@@ -151,6 +151,25 @@
   .fa-group-row td { background: var(--bg2); font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; padding: 5px 12px; border-bottom: 0.5px solid var(--border); }
   .fa-footnote { font-size: 11px; color: var(--text3); margin-top: 6px; }
 
+  /* ── FA Sort buttons ── */
+  .fa-sort-btn { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); white-space: nowrap; }
+  .fa-sort-btn:hover { background: var(--bg2); }
+  .fa-sort-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  /* ── Team Financials ranking tables ── */
+  .fin-ranking { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1rem; }
+  .fin-ranking-title { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; padding: .6rem 1rem; background: var(--bg2); border-bottom: 0.5px solid var(--border); }
+  .fin-rank-row { display: flex; align-items: center; gap: 10px; padding: 7px 1rem; border-top: 0.5px solid var(--border); font-size: 13px; }
+  .fin-rank-row:first-of-type { border-top: none; }
+  .fin-rank-num { font-size: 11px; color: var(--text3); width: 18px; flex-shrink: 0; text-align: right; }
+  .fin-rank-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .fin-rank-name { flex: 1; color: var(--text); }
+  .fin-rank-val { font-weight: 500; white-space: nowrap; }
+  .fin-rank-bar-wrap { width: 80px; flex-shrink: 0; }
+  .fin-rank-bar-bg { height: 5px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
+  .fin-rank-bar-fill { height: 100%; border-radius: 3px; }
+  .fin-rankings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+
   /* ── Collapsible section toggle ── */
   .section-toggle-btn { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 4px 12px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); margin-left: auto; }
   .section-toggle-btn:hover { background: var(--bg2); }
@@ -234,9 +253,11 @@
       <button class="nav-item active" id="nav-home" onclick="showSection('home')">
         <span class="nav-icon">🏠</span> League Home
       </button>
-      <button class="nav-item" id="nav-financials" onclick="showSection('financials')">
+      <button class="nav-item" id="nav-financials" onclick="toggleFinancialsMenu()">
         <span class="nav-icon">💰</span> Team Financials
+        <span class="nav-arrow" id="financials-arrow">▶</span>
       </button>
+      <div class="nav-submenu" id="financials-submenu"></div>
       <button class="nav-item" id="nav-roster" onclick="toggleRosterMenu()">
         <span class="nav-icon">📋</span> Team Roster
         <span class="nav-arrow" id="roster-arrow">▶</span>
@@ -275,7 +296,7 @@
       <!-- Team Financials -->
       <div class="page-section hidden" id="section-financials">
         <div class="page-header">
-          <h2 class="page-title">💰 Team Financials</h2>
+          <h2 class="page-title" id="financials-page-title">💰 Team Financials</h2>
         </div>
         <div id="financials-content"></div>
       </div>
@@ -2287,21 +2308,34 @@ function renderFATable(posFilter, faData) {
   let filtered = data.filter(p => posFilter === "ALL" || (p.primaryPos || p.pos) === posFilter);
   if (!filtered.length) return `<div style="padding:1.5rem;text-align:center;color:var(--text3);font-size:13px">No upcoming free agents at this position</div>`;
 
-  // ALL tab: sort by salary desc (dedupe by name+pos so multi-pos players don\'t stack)
-  // Position tab: already sorted by name from parsePlayerSalary
+  // Dedupe multi-pos players in ALL view, then sort per user preference
   if (posFilter === "ALL") {
-    // Dedupe — in ALL view show each player only once, highest salary sort
     const seen = new Set();
     const deduped = [];
-    // Sort salary desc first
     const bySalary = [...filtered].sort((a,b) => b.salary - a.salary);
     for (const p of bySalary) {
-      if (!seen.has(p.name)) {
-        seen.add(p.name);
-        deduped.push(p);
-      }
+      if (!seen.has(p.name)) { seen.add(p.name); deduped.push(p); }
     }
     filtered = deduped;
+    if (faCurrentSort === "lastname") {
+      filtered.sort((a,b) => {
+        const lastA = a.name.trim().split(" ").pop();
+        const lastB = b.name.trim().split(" ").pop();
+        return lastA.localeCompare(lastB);
+      });
+    }
+    // else already sorted by salary desc
+  } else {
+    // Position tab — sort by user preference
+    if (faCurrentSort === "salary") {
+      filtered.sort((a,b) => b.salary - a.salary);
+    } else {
+      filtered.sort((a,b) => {
+        const lastA = a.name.trim().split(" ").pop();
+        const lastB = b.name.trim().split(" ").pop();
+        return lastA.localeCompare(lastB);
+      });
+    }
   }
 
   const posColor = POS_COLORS[posFilter] || { bg:"#888", text:"#fff" };
@@ -2337,6 +2371,7 @@ function toggleFASection() {
 }
 
 function filterFA(pos) {
+  faCurrentPos = pos;
   document.querySelectorAll(".fa-filter-btn").forEach(b => {
     b.classList.remove("active");
     b.style.background = "";
@@ -2352,7 +2387,8 @@ function filterFA(pos) {
     btn.style.color        = text;
     btn.style.borderColor  = bg;
   }
-  document.getElementById("fa-table-wrap").innerHTML = renderFATable(pos);
+  const FA_DATA = UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA;
+  document.getElementById("fa-table-wrap").innerHTML = renderFATable(pos, FA_DATA);
 }
 
 
@@ -2420,9 +2456,13 @@ function parseFormResponses(rows) {
 
   for (const year of years) {
     const rowIdxs = yearRows[year];
-    // Headers 1 through headers.length-2 are proposals (last col is email)
-    for (let col = 1; col < headers.length - 1; col++) {
+    // Headers 1 through end, skipping Timestamp (col 0) and Email (last col)
+    // Detect email column by header name
+    const emailColIdx = headers.findIndex(h => h.toLowerCase().includes("email"));
+    const lastPropCol = emailColIdx > -1 ? emailColIdx : headers.length;
+    for (let col = 1; col < lastPropCol; col++) {
       const question = headers[col].trim();
+      if (!question) continue;
       const colonIdx = question.indexOf(":");
       const category = colonIdx > -1 ? question.substring(0, colonIdx).trim() : "Other";
       const proposal = colonIdx > -1 ? question.substring(colonIdx + 1).trim() : question;
@@ -2632,6 +2672,175 @@ function toggleCBA(i) {
 }
 
 
+
+// ─────────────────────────────────────────────
+//  Team Financials — submenu + ranking + detail
+// ─────────────────────────────────────────────
+const TEAM_ORDER = [
+  "Kansas City Royals","Seattle Mariners","Los Angeles Dodgers","Los Angeles Angels",
+  "Texas Rangers","Milwaukee Brewers","Las Vegas A\'s","Chicago Cubs",
+  "San Diego Padres","Baltimore Orioles","San Francisco Giants","Cincinnati Reds"
+];
+
+let financialsMenuOpen = false;
+
+function toggleFinancialsMenu() {
+  financialsMenuOpen = !financialsMenuOpen;
+  const submenu = document.getElementById("financials-submenu");
+  const arrow   = document.getElementById("financials-arrow");
+  if (submenu) submenu.classList.toggle("open", financialsMenuOpen);
+  if (arrow)   arrow.classList.toggle("open", financialsMenuOpen);
+  showSection("financials");
+  showTeamFinancialHome();
+  document.getElementById("nav-financials").classList.add("active");
+}
+
+function showTeamFinancialHome() {
+  document.getElementById("financials-page-title").textContent = "💰 Team Financials";
+  document.getElementById("financials-content").innerHTML = buildFinancialsHome();
+  document.querySelectorAll(".fin-sub-item").forEach(b => b.classList.remove("active"));
+}
+
+function showTeamFinancials(teamName) {
+  document.getElementById("financials-page-title").textContent = "💰 " + teamName;
+  document.getElementById("financials-content").innerHTML = buildTeamFinancialDetail(teamName);
+  document.querySelectorAll(".fin-sub-item").forEach(b => b.classList.remove("active"));
+  const id = "fin-sub-" + teamName.replace(/[^a-z0-9]/gi,"_");
+  const btn = document.getElementById(id);
+  if (btn) btn.classList.add("active");
+}
+
+function buildFinancialsSubmenu(teams) {
+  const submenu = document.getElementById("financials-submenu");
+  if (!submenu) return;
+  const teamArr = Object.values(teams);
+  const sorted = TEAM_ORDER.map(n => teamArr.find(t => t.name === n)).filter(Boolean);
+  submenu.innerHTML = sorted.map(t => {
+    const meta = TEAM_META[t.name] || {};
+    const id   = "fin-sub-" + (t.name||"").replace(/[^a-z0-9]/gi,"_");
+    const short = t.name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD");
+    return `<button class="nav-item sub-item fin-sub-item" id="${id}" onclick="showTeamFinancials(\'${t.name.replace(/'/g,"\\'")}\');showSection(\'financials\')">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${meta.color1||"#888"};margin-right:6px;flex-shrink:0"></span>
+      ${short}
+    </button>`;
+  }).join("");
+}
+
+function buildFinancialsHome() {
+  const teamArr = Object.values(_teams);
+  const fmtM = v => "$"+(v/1e6).toFixed(2)+"M";
+  const fmtDollars = v => "$"+Math.abs(v).toFixed(2);
+
+  function rankingTable(title, items, valFn, barFn, colorFn, fmtFn) {
+    const sorted = [...items].sort((a,b) => barFn(b) - barFn(a));
+    const max = barFn(sorted[0]) || 1;
+    return `<div class="fin-ranking">
+      <div class="fin-ranking-title">${title}</div>
+      ${sorted.map((t,i) => {
+        const meta = TEAM_META[t.name] || {};
+        const val  = fmtFn(t);
+        const pct  = Math.min(100, Math.round(barFn(t)/max*100));
+        const col  = colorFn ? colorFn(t) : "#378ADD";
+        return `<div class="fin-rank-row">
+          <span class="fin-rank-num">${i+1}</span>
+          <span class="fin-rank-dot" style="background:${meta.color1||"#888"}"></span>
+          <span class="fin-rank-name">${t.name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD")}</span>
+          <div class="fin-rank-bar-wrap"><div class="fin-rank-bar-bg"><div class="fin-rank-bar-fill" style="width:${pct}%;background:${col}"></div></div></div>
+          <span class="fin-rank-val" style="color:${col}">${val}</span>
+        </div>`;
+      }).join("")}
+    </div>`;
+  }
+
+  const CAP = 250000000;
+  const barColorCap = t => { const p=(t.payrollReal+t.deadReal)/CAP; return p>1?"#A32D2D":p>.96?"#BA7517":"#3B6D11"; };
+  const duesColor = t => t.finalDues >= 0 ? "var(--good)" : "var(--danger)";
+  const taxColor  = t => t.taxDues > 240 ? "#BA7517" : "var(--text2)";
+
+  return `<div class="fin-rankings-grid">
+    ${rankingTable("Total Cap Hit (Payroll + Dead Money)",   teamArr, t=>t, t=>(t.payrollReal+t.deadReal), barColorCap, t=>fmtM(t.payrollReal+t.deadReal))}
+    ${rankingTable("Net Dues Owed / Earned",                 teamArr, t=>t, t=>Math.abs(t.finalDues),      duesColor,   t=>(t.finalDues>=0?"+ ":"- ")+fmtDollars(t.finalDues))}
+    ${rankingTable("Payroll Tax",                            teamArr, t=>t, t=>t.taxReal,                  taxColor,    t=>fmtM(t.taxReal))}
+    ${rankingTable("Dead Money",                             teamArr, t=>t, t=>t.deadReal,                 t=>"#BA7517",t=>t.deadReal>0?fmtM(t.deadReal):"None")}
+    ${rankingTable("MiLB Bonus Pool",                        teamArr, t=>t, t=>t.mlBonusReal,              t=>"#378ADD",t=>fmtM(t.mlBonusReal))}
+    ${rankingTable("2027 Guaranteed Payroll",                teamArr, t=>t, t=>t.guaranteed2027,           t=>"#5856D6",t=>fmtM(t.guaranteed2027))}
+  </div>`;
+}
+
+function buildTeamFinancialDetail(teamName) {
+  const t = Object.values(_teams).find(t => t.name === teamName);
+  if (!t) return `<div class="status-bar">Team not found.</div>`;
+  const meta  = TEAM_META[t.name] || {};
+  const CAP   = 250000000;
+  const total = t.payrollReal + t.deadReal;
+  const space = CAP - total;
+  const pct   = Math.min(104, Math.round(total/CAP*100));
+  const fmtM  = v => "$"+(v/1e6).toFixed(2)+"M";
+  const fmtD  = v => "$"+Math.abs(v).toFixed(2);
+  const barColor = pct>100?"#A32D2D":pct>96?"#BA7517":"#3B6D11";
+  const spaceStr = space>=0 ? fmtM(space)+" available" : fmtM(Math.abs(space))+" over cap";
+  const spaceClass = space>=0 ? "var(--good)" : "var(--danger)";
+  const dueColor = t.finalDues>=0 ? "var(--good)" : "var(--danger)";
+  const h = HISTORY_FALLBACK[t.name] || {};
+
+  // Reuse the existing expandTeam detail panel HTML
+  return `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.25rem">
+      <div style="width:52px;height:52px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:13px;background:${meta.color1||"#888"};color:${meta.text||"#fff"};border:2px solid ${meta.color2||"#ccc"}">${meta.abbr||""}</div>
+      <div>
+        <div style="font-size:16px;font-weight:500;color:var(--text)">${t.name}</div>
+        <div style="font-size:12px;color:var(--text2)">${meta.owner||""} · ${meta.phone||""}</div>
+      </div>
+    </div>
+
+    ${h.moneyPL !== undefined ? `
+    <div class="sec-header">League history</div>
+    <div class="hist-grid" style="margin-bottom:1rem">
+      <div class="pm"><div class="pm-lbl">All-time money +/-</div><div class="pm-val" style="color:${h.moneyPL>=0?"var(--good)":"var(--danger)"}">${h.moneyPL>=0?"+ $":"- $"}${Math.abs(h.moneyPL).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+      <div class="pm"><div class="pm-lbl">Win %</div><div class="pm-val">${((h.winPct||0)*100).toFixed(1)}%</div><div class="pm-sub">${h.wins||0}W – ${h.losses||0}L</div></div>
+      <div class="pm"><div class="pm-lbl">Avg finish</div><div class="pm-val">${h.avgFinish||"—"}</div><div class="pm-sub">out of 12</div></div>
+      <div class="pm"><div class="pm-lbl">Avg season pts</div><div class="pm-val">${(h.avgPts||0).toLocaleString("en-US",{maximumFractionDigits:1})}</div></div>
+      <div class="pm"><div class="pm-lbl">Playoff appearances</div><div class="pm-val">${h.playoffApps||0}</div></div>
+      <div class="pm"><div class="pm-lbl">Championships</div><div class="pm-val" style="color:${(h.champs||0)>0?"var(--warn)":"var(--text)"}">${(h.champs||0)===0?"—":h.champs+" 🏆"}</div></div>
+    </div>` : ""}
+
+    <div class="sec-header">2026 Expenses</div>
+    <div class="p-grid" style="margin-bottom:1rem">
+      <div class="pm"><div class="pm-lbl">Active payroll</div><div class="pm-val">${fmtM(t.payrollReal)}</div><div class="pm-sub">$${t.payrollDues.toFixed(2)} in dues</div></div>
+      <div class="pm"><div class="pm-lbl">Dead money</div><div class="pm-val ${t.deadReal>0?"warn":"good"}">${t.deadReal===0?"None":fmtM(t.deadReal)}</div><div class="pm-sub">${t.deadDues===0?"$0.00":"$"+t.deadDues.toFixed(2)} in dues</div></div>
+      <div class="pm"><div class="pm-lbl">Total cap hit</div><div class="pm-val">${fmtM(total)}</div><div class="pm-sub" style="color:${spaceClass}">${spaceStr}</div></div>
+      <div class="pm"><div class="pm-lbl">Payroll tax</div><div class="pm-val ${t.taxDues>240?"warn":""}">${fmtM(t.taxReal)}</div><div class="pm-sub">$${t.taxDues.toFixed(2)} in dues</div></div>
+      <div class="pm"><div class="pm-lbl">MiLB bonus pool</div><div class="pm-val">${fmtM(t.mlBonusReal)}</div><div class="pm-sub">$${t.mlBonusDues.toFixed(2)} in dues</div></div>
+      <div class="pm"><div class="pm-lbl">Trade $ spent</div><div class="pm-val">${t.tradeSpentReal===0?"None":fmtM(t.tradeSpentReal)}</div><div class="pm-sub">$${t.tradeSpentDues.toFixed(2)} in dues</div></div>
+    </div>
+    <div class="pm" style="margin-bottom:.75rem"><div class="pm-lbl">Total expenses</div><div class="pm-val" style="color:var(--danger)">$${t.totalExpDues.toFixed(2)} in dues</div></div>
+
+    <hr class="divider">
+    <div class="sec-header">2026 Earnings</div>
+    <div class="p-grid" style="margin-bottom:1rem">
+      <div class="pm"><div class="pm-lbl">Trade $ saved</div><div class="pm-val good">${t.tradeSavedReal===0?"None":fmtM(t.tradeSavedReal)}</div><div class="pm-sub">${t.tradeSavedDues===0?"$0.00":"$"+t.tradeSavedDues.toFixed(2)} earned back</div></div>
+      <div class="pm"><div class="pm-lbl">Regular season finish</div><div class="pm-val" style="color:var(--text2)">${t.regSeasonFinish||"TBD"}</div><div class="pm-sub">${t.regSeasonDues>0?"$"+t.regSeasonDues.toFixed(2)+" earned":"$0.00 so far"}</div></div>
+      <div class="pm"><div class="pm-lbl">Playoff finish</div><div class="pm-val" style="color:var(--text2)">${t.playoffFinish||"TBD"}</div><div class="pm-sub">${t.playoffDues>0?"$"+t.playoffDues.toFixed(2)+" earned":"$0.00 so far"}</div></div>
+    </div>
+    <div class="pm" style="margin-bottom:.75rem"><div class="pm-lbl">Total earnings</div><div class="pm-val good">$${t.totalEarnDues.toFixed(2)} earned back</div></div>
+
+    <hr class="divider">
+    <div class="pm"><div class="pm-lbl">Net dues owed (until end of season)</div><div class="pm-val" style="font-size:26px;color:${dueColor}">${t.finalDues>=0?"+ ":"- "}${fmtD(t.finalDues)}</div></div>
+
+    <hr class="divider">
+    <div class="sec-header">2027 Outlook</div>
+    <div class="p-grid" style="margin-bottom:1rem">
+      <div class="pm"><div class="pm-lbl">Guaranteed payroll</div><div class="pm-val">${fmtM(t.guaranteed2027)}</div></div>
+      <div class="pm"><div class="pm-lbl">Expiring contracts</div><div class="pm-val warn">${fmtM(t.expiring)}</div></div>
+      <div class="pm"><div class="pm-lbl">Non-guaranteed</div><div class="pm-val">${fmtM(t.nonGuaranteed)}</div></div>
+      <div class="pm"><div class="pm-lbl">Future dead money</div><div class="pm-val ${t.futDead>0?"warn":"good"}">${t.futDead===0?"None":fmtM(t.futDead)}</div></div>
+      <div class="pm"><div class="pm-lbl">Cap space</div><div class="pm-val" style="color:${spaceClass}">${spaceStr}</div></div>
+    </div>
+    <div class="pbar-lbl" style="margin-top:.5rem"><span>Cap used: ${fmtM(total)} of $250M</span><span>${pct}%</span></div>
+    <div class="pbar-bg"><div class="pbar-fill" style="width:${Math.min(100,pct)}%;background:${barColor}"></div></div>
+  `;
+}
+
 // ─────────────────────────────────────────────
 //  Navigation
 // ─────────────────────────────────────────────
@@ -2701,6 +2910,9 @@ function buildRosterSubmenu(teams) {
 // ─────────────────────────────────────────────
 //  Section inner HTML builders
 // ─────────────────────────────────────────────
+let faCurrentSort = "salary"; // "salary" or "lastname"
+let faCurrentPos  = "ALL";
+
 function buildFASectionInner(teams) {
   const FA_DATA = UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA;
   const positions = ["ALL",...POS_ORDER_FA];
@@ -2715,10 +2927,38 @@ function buildFASectionInner(teams) {
   const pending   = FA_DATA.filter(p=>p.to).length;
   return `
     <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">${confirmed} confirmed free agents · ${pending} pending team option decisions</p>
-    <div class="fa-filters">${filterBtns}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <div class="fa-filters" style="margin-bottom:0;flex:1">${filterBtns}</div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="fa-sort-btn active" id="sort-salary" onclick="setFASort(\'salary\')" title="Sort by salary">💰 Salary</button>
+        <button class="fa-sort-btn" id="sort-lastname" onclick="setFASort(\'lastname\')" title="Sort by last name">A–Z Last Name</button>
+      </div>
+    </div>
     <div class="fa-table-wrap" id="fa-table-wrap">${renderFATable("ALL", FA_DATA)}</div>
     <p class="fa-footnote">* Player has a 2-year team option — will only reach free agency if the team declines their option</p>
   `;
+}
+
+function setFASort(sort) {
+  faCurrentSort = sort;
+  document.querySelectorAll(".fa-sort-btn").forEach(b => b.classList.remove("active"));
+  const btn = document.getElementById("sort-" + sort);
+  if (btn) btn.classList.add("active");
+  const FA_DATA = UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA;
+  document.getElementById("fa-table-wrap").innerHTML = renderFATable(faCurrentPos, FA_DATA);
+}
+
+const CAT_ORDER = ["Trading","Free Agency","Roster","Draft","Scoring","Season Schedule","Fees","Fines","Other"];
+
+function sortByCategory(items) {
+  return [...items].sort((a,b) => {
+    const ai = CAT_ORDER.findIndex(c => a.category.toLowerCase().includes(c.toLowerCase()));
+    const bi = CAT_ORDER.findIndex(c => b.category.toLowerCase().includes(c.toLowerCase()));
+    const aIdx = ai === -1 ? 99 : ai;
+    const bIdx = bi === -1 ? 99 : bi;
+    if (aIdx !== bIdx) return aIdx - bIdx;
+    return a.proposal.localeCompare(b.proposal);
+  });
 }
 
 function buildRulesSectionInner() {
@@ -2729,7 +2969,7 @@ function buildRulesSectionInner() {
   if (proposed.length > 0) {
     html += `<div class="rules-year-group">
       <div class="rules-year-label">🔵 Pending Proposals</div>`;
-    for (const r of proposed) {
+    for (const r of sortByCategory(proposed)) {
       const total = (r.votesFor||0)+(r.votesAgainst||0);
       const pct   = total > 0 ? Math.round(r.votesFor/total*100) : 0;
       html += `<div class="rules-card">
@@ -2754,7 +2994,10 @@ function buildRulesSectionInner() {
       const failed = yearItems.filter(r=>!r.passed);
       html += `<div class="rules-year-group">
         <div class="rules-year-label">📅 ${year} Winter Meetings — Vote Results (${passed.length} passed · ${failed.length} failed)</div>`;
-      for (const r of [...passed,...failed]) {
+      const sortedYear = sortByCategory(yearItems);
+      const sortedPassed = sortedYear.filter(r=>r.passed);
+      const sortedFailed = sortedYear.filter(r=>!r.passed);
+      for (const r of [...sortedPassed,...sortedFailed]) {
         const pct = r.total>0?Math.round(r.votesFor/r.total*100):0;
         const barColor = r.passed?"var(--good)":"var(--danger)";
         html += `<div class="rules-card">
@@ -2854,6 +3097,8 @@ async function loadData() {
 
     // Populate each section independently
     document.getElementById("home-content").innerHTML = buildSummary(teams, payouts);
+    // Team financials home now shows ranking tables
+    showTeamFinancialHome();
 
     document.getElementById("financials-content").innerHTML = `
       <p class="sec-lbl">All 12 teams — click any card to expand</p>
@@ -2867,6 +3112,8 @@ async function loadData() {
 
     // Build roster submenu
     buildRosterSubmenu(teams);
+    buildFinancialsSubmenu(teams);
+    showTeamFinancialHome();
 
     statusEl.style.display = "none";
     dashEl.style.display   = "block";
