@@ -23,17 +23,39 @@
       --good: #7ab83e; --warn: #e8a030; --danger: #e05555;
     }
   }
-  body { font-family: var(--font); background: var(--bg3); color: var(--text); min-height: 100vh; }
+  body { font-family: var(--font); background: var(--bg3); color: var(--text); min-height: 100vh; margin: 0; }
 
-  /* ── Layout ── */
-  .site-header { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 1rem 1.5rem; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
-  .site-header h1 { font-size: 18px; font-weight: 500; }
-  .site-header .badge { font-size: 11px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 6px; padding: 3px 8px; color: var(--text2); }
-  .refresh-btn { margin-left: auto; background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); }
+  /* ── App Layout ── */
+  .app-layout { display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar { width: 220px; flex-shrink: 0; background: var(--bg); border-right: 0.5px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; overflow-y: auto; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 1.25rem 1rem 1rem; border-bottom: 0.5px solid var(--border); }
+  .sidebar-title { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.3; }
+  .sidebar-season { font-size: 11px; color: var(--text3); }
+  .sidebar-nav { flex: 1; padding: .5rem 0; }
+  .sidebar-footer { padding: .75rem 1rem; border-top: 0.5px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+  .nav-item { width: 100%; background: none; border: none; cursor: pointer; padding: 9px 1rem; display: flex; align-items: center; gap: 9px; font-family: var(--font); font-size: 13px; color: var(--text2); text-align: left; transition: background .12s, color .12s; border-radius: 0; }
+  .nav-item:hover { background: var(--bg2); color: var(--text); }
+  .nav-item.active { background: var(--bg2); color: var(--text); font-weight: 500; border-left: 3px solid #378ADD; }
+  .nav-item.sub-item { padding-left: 2.5rem; font-size: 12px; }
+  .nav-item.sub-item.active { border-left: 3px solid #378ADD; }
+  .nav-icon { font-size: 14px; flex-shrink: 0; }
+  .nav-arrow { margin-left: auto; font-size: 10px; transition: transform .2s; color: var(--text3); }
+  .nav-arrow.open { transform: rotate(90deg); }
+  .nav-submenu { display: none; background: var(--bg2); }
+  .nav-submenu.open { display: block; }
+
+  /* ── Main content ── */
+  .main-content { margin-left: 220px; flex: 1; padding: 1.5rem 1.5rem 2rem; min-width: 0; }
+  .page-section { display: block; }
+  .page-section.hidden { display: none; }
+  .page-header { margin-bottom: 1.25rem; padding-bottom: .75rem; border-bottom: 0.5px solid var(--border); }
+  .page-title { font-size: 18px; font-weight: 500; color: var(--text); }
+
+  .refresh-btn { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); }
   .refresh-btn:hover { background: var(--bg2); }
-  .last-updated { font-size: 11px; color: var(--text3); margin-left: 8px; }
-
-  .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.25rem; }
+  .last-updated { font-size: 11px; color: var(--text3); }
 
   /* ── Loading / error ── */
   .status-bar { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; text-align: center; color: var(--text2); font-size: 14px; margin-bottom: 1.5rem; }
@@ -197,22 +219,102 @@
 </head>
 <body>
 
-<header class="site-header">
-  <span style="font-size:22px">⚾</span>
-  <h1>California Penal League</h1>
-  <span class="badge">2026 Season</span>
-  <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
-  <span class="last-updated" id="last-updated"></span>
-</header>
+<div class="app-layout">
+  <!-- ── Left Sidebar ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span style="font-size:20px">⚾</span>
+      <div>
+        <div class="sidebar-title">California Penal League</div>
+        <div class="sidebar-season">2026 Season</div>
+      </div>
+    </div>
 
-<div class="container">
-  <div id="status" class="status-bar"><span class="spinner"></span> Loading live data from Google Sheets…</div>
-  <div id="dashboard" style="display:none"></div>
+    <div class="sidebar-nav">
+      <button class="nav-item active" id="nav-home" onclick="showSection('home')">
+        <span class="nav-icon">🏠</span> League Home
+      </button>
+      <button class="nav-item" id="nav-financials" onclick="showSection('financials')">
+        <span class="nav-icon">💰</span> Team Financials
+      </button>
+      <button class="nav-item" id="nav-roster" onclick="toggleRosterMenu()">
+        <span class="nav-icon">📋</span> Team Roster
+        <span class="nav-arrow" id="roster-arrow">▶</span>
+      </button>
+      <div class="nav-submenu" id="roster-submenu"></div>
+      <button class="nav-item" id="nav-fa" onclick="showSection('fa')">
+        <span class="nav-icon">🔓</span> Free Agents
+      </button>
+      <button class="nav-item" id="nav-rules" onclick="showSection('rules')">
+        <span class="nav-icon">🗳️</span> Rules Changes
+      </button>
+      <button class="nav-item" id="nav-cba" onclick="showSection('cba')">
+        <span class="nav-icon">⚖️</span> CBA
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+      <span class="last-updated" id="last-updated"></span>
+    </div>
+  </nav>
+
+  <!-- ── Main Content ── -->
+  <div class="main-content">
+    <div id="status" class="status-bar"><span class="spinner"></span> Loading live data from Google Sheets…</div>
+    <div id="dashboard" style="display:none">
+
+      <!-- Home -->
+      <div class="page-section" id="section-home">
+        <div class="page-header">
+          <h2 class="page-title">🏠 League Home</h2>
+        </div>
+        <div id="home-content"></div>
+      </div>
+
+      <!-- Team Financials -->
+      <div class="page-section hidden" id="section-financials">
+        <div class="page-header">
+          <h2 class="page-title">💰 Team Financials</h2>
+        </div>
+        <div id="financials-content"></div>
+      </div>
+
+      <!-- Team Roster (per team pages) -->
+      <div class="page-section hidden" id="section-roster">
+        <div class="page-header">
+          <h2 class="page-title" id="roster-page-title">📋 Team Roster</h2>
+        </div>
+        <div id="roster-content"></div>
+      </div>
+
+      <!-- Free Agents -->
+      <div class="page-section hidden" id="section-fa">
+        <div class="page-header">
+          <h2 class="page-title">🔓 Upcoming Free Agents</h2>
+        </div>
+        <div id="fa-content"></div>
+      </div>
+
+      <!-- Rules Changes -->
+      <div class="page-section hidden" id="section-rules">
+        <div class="page-header">
+          <h2 class="page-title">🗳️ Rules Changes</h2>
+        </div>
+        <div id="rules-content"></div>
+      </div>
+
+      <!-- CBA -->
+      <div class="page-section hidden" id="section-cba">
+        <div class="page-header">
+          <h2 class="page-title">⚖️ Collective Bargaining Agreement</h2>
+        </div>
+        <div id="cba-content"></div>
+      </div>
+
+    </div>
+  </div>
 </div>
-
-<footer class="site-footer">
-  California Penal League · Data syncs automatically from Google Sheets
-</footer>
 
 <script>
 // ─────────────────────────────────────────────
@@ -2363,88 +2465,8 @@ function statusClass(s) {
   return "proposed";
 }
 
-function buildRulesSection() {
-  const proposed  = RULES_DATA.proposed;
-  const history   = FORM_RESP_DATA;
+// Rules section now rendered by buildRulesSectionInner()
 
-  let html = `
-    <div class="rules-wrap">
-      <div class="rules-header">
-        <h2>📋 Rules Changes</h2>
-        <button class="section-toggle-btn" id="rules-toggle-btn" onclick="toggleRulesSection()">▶ Show</button>
-      </div>
-      <div class="section-collapsible collapsed" id="rules-collapsible">
-  `;
-
-  // ── Pending / Proposed section ──
-  if (proposed.length > 0) {
-    html += `<div class="rules-year-group">
-      <div class="rules-year-label">🔵 Pending Proposals</div>`;
-    for (const r of proposed) {
-      const total = (r.votesFor || 0) + (r.votesAgainst || 0);
-      const pct   = total > 0 ? Math.round(r.votesFor / total * 100) : 0;
-      html += `<div class="rules-card">
-        <div class="rules-card-top">
-          <span class="rules-category ${catClass(r.category)}">${r.category}</span>
-          <span class="rules-proposal">${r.proposal}</span>
-          <span class="rules-status ${statusClass(r.status)}">${r.status || "Proposed"}</span>
-        </div>
-        ${r.rationale ? `<div class="rules-rationale">${r.rationale}</div>` : ""}
-        ${r.proposedBy ? `<div class="rules-proposed-by">Proposed by: ${r.proposedBy}</div>` : ""}
-        ${total > 0 ? `
-          <div class="rules-votes">
-            <span class="rules-vote-for">✓ ${r.votesFor} for</span>
-            <span class="rules-vote-against">✗ ${r.votesAgainst} against</span>
-          </div>
-          <div class="rules-vote-bar"><div class="rules-vote-fill" style="width:${pct}%"></div></div>
-        ` : ""}
-      </div>`;
-    }
-    html += `</div>`;
-  }
-
-  // ── Historical vote results grouped by year (most recent first) ──
-  if (history.length > 0) {
-    const years = [...new Set(history.map(r => r.year))].sort((a,b) => b.localeCompare(a));
-    for (const year of years) {
-      const yearItems = history.filter(r => r.year === year);
-      const passed = yearItems.filter(r => r.passed);
-      const failed = yearItems.filter(r => !r.passed);
-      html += `<div class="rules-year-group">
-        <div class="rules-year-label">📅 ${year} Winter Meetings — Vote Results (${passed.length} passed · ${failed.length} failed)</div>`;
-      // Passed first, then failed
-      for (const r of [...passed, ...failed]) {
-        const pct = r.total > 0 ? Math.round(r.votesFor / r.total * 100) : 0;
-        const barColor = r.passed ? "var(--good)" : "var(--danger)";
-        html += `<div class="rules-card">
-          <div class="rules-card-top">
-            <span class="rules-category ${catClass(r.category)}">${r.category}</span>
-            <span class="rules-proposal">${r.proposal}</span>
-            <span class="rules-status ${r.passed ? "passed" : "failed"}">${r.passed ? "✓ Passed" : "✗ Failed"}</span>
-          </div>
-          <div class="rules-votes">
-            <span class="rules-vote-for">✓ ${r.votesFor} for</span>
-            <span class="rules-vote-against">✗ ${r.votesAgainst} against</span>
-            <span style="color:var(--text3);font-size:11px">(needed 8 of 12)</span>
-          </div>
-          <div class="rules-vote-bar"><div class="rules-vote-fill" style="width:${pct}%;background:${barColor}"></div></div>
-        </div>`;
-      }
-      html += `</div>`;
-    }
-  }
-
-  html += `</div></div>`;
-  return html;
-}
-
-function toggleRulesSection() {
-  const el  = document.getElementById("rules-collapsible");
-  const btn = document.getElementById("rules-toggle-btn");
-  const isCollapsed = el.classList.contains("collapsed");
-  el.classList.toggle("collapsed", !isCollapsed);
-  btn.textContent = isCollapsed ? "▼ Hide" : "▶ Show";
-}
 
 // ─────────────────────────────────────────────
 //  CBA sections data
@@ -2599,8 +2621,168 @@ const CBA_SECTIONS = [
   }
 ];
 
-function buildCBA() {
-  const items = CBA_SECTIONS.map((s, i) => `
+// CBA section now rendered by buildCBAInner()
+
+function toggleCBA(i) {
+  const body = document.getElementById("cba-body-" + i);
+  const btn  = document.getElementById("cba-btn-" + i);
+  const isOpen = body.classList.contains("visible");
+  body.classList.toggle("visible", !isOpen);
+  btn.classList.toggle("open", !isOpen);
+}
+
+
+// ─────────────────────────────────────────────
+//  Navigation
+// ─────────────────────────────────────────────
+const SECTIONS = ["home","financials","roster","fa","rules","cba"];
+let currentSection = "home";
+let rosterMenuOpen = false;
+
+function showSection(name) {
+  currentSection = name;
+  // Hide all sections
+  SECTIONS.forEach(s => {
+    const el = document.getElementById("section-" + s);
+    if (el) el.classList.toggle("hidden", s !== name);
+  });
+  // Update nav active state
+  document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+  const btn = document.getElementById("nav-" + name);
+  if (btn) btn.classList.add("active");
+  // Scroll to top
+  document.querySelector(".main-content").scrollTop = 0;
+}
+
+function toggleRosterMenu() {
+  rosterMenuOpen = !rosterMenuOpen;
+  const submenu = document.getElementById("roster-submenu");
+  const arrow   = document.getElementById("roster-arrow");
+  submenu.classList.toggle("open", rosterMenuOpen);
+  arrow.classList.toggle("open", rosterMenuOpen);
+  if (rosterMenuOpen) showSection("roster");
+  document.getElementById("nav-roster").classList.add("active");
+}
+
+function showTeamRoster(teamName) {
+  document.getElementById("roster-page-title").textContent = "📋 " + teamName;
+  document.getElementById("roster-content").innerHTML = `
+    <div class="status-bar" style="color:var(--text2)">
+      🚧 Roster details for <strong>${teamName}</strong> coming soon.
+    </div>
+  `;
+  showSection("roster");
+  // Mark sub-item active
+  document.querySelectorAll(".nav-item.sub-item").forEach(b => b.classList.remove("active"));
+  const teamBtn = document.getElementById("roster-sub-" + teamName.replace(/[^a-z0-9]/gi,"_"));
+  if (teamBtn) teamBtn.classList.add("active");
+}
+
+function buildRosterSubmenu(teams) {
+  const submenu = document.getElementById("roster-submenu");
+  if (!submenu) return;
+  const teamOrder = [
+    "Kansas City Royals","Seattle Mariners","Los Angeles Dodgers","Los Angeles Angels",
+    "Texas Rangers","Milwaukee Brewers","Las Vegas A\'s","Chicago Cubs",
+    "San Diego Padres","Baltimore Orioles","San Francisco Giants","Cincinnati Reds"
+  ];
+  const teamArr = Object.values(teams);
+  const sorted = teamOrder.map(name => teamArr.find(t => t.name === name)).filter(Boolean);
+  submenu.innerHTML = sorted.map(t => {
+    const meta = TEAM_META[t.name] || {};
+    const id   = "roster-sub-" + (t.name||"").replace(/[^a-z0-9]/gi,"_");
+    return `<button class="nav-item sub-item" id="${id}" onclick="showTeamRoster(\'${t.name.replace(/'/g,"\\'")}\')">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${meta.color1||"#888"};margin-right:6px;flex-shrink:0"></span>
+      ${t.name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD")}
+    </button>`;
+  }).join("");
+}
+
+// ─────────────────────────────────────────────
+//  Section inner HTML builders
+// ─────────────────────────────────────────────
+function buildFASectionInner(teams) {
+  const FA_DATA = UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA;
+  const positions = ["ALL",...POS_ORDER_FA];
+  const filterBtns = positions.map(p => {
+    const col = POS_COLORS[p] || { bg:"#888", text:"#fff" };
+    return `<button class="fa-filter-btn ${p==="ALL"?"active":""}" onclick="filterFA(\'${p}\')" id="fa-btn-${p}"
+      data-bg="${col.bg}" data-text="${col.text}"
+      style="${p==="ALL"?"background:"+col.bg+";color:"+col.text+";border-color:"+col.bg:""}"
+    >${p==="ALL"?"All Positions":p}</button>`;
+  }).join("");
+  const confirmed = FA_DATA.filter(p=>!p.to).length;
+  const pending   = FA_DATA.filter(p=>p.to).length;
+  return `
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">${confirmed} confirmed free agents · ${pending} pending team option decisions</p>
+    <div class="fa-filters">${filterBtns}</div>
+    <div class="fa-table-wrap" id="fa-table-wrap">${renderFATable("ALL", FA_DATA)}</div>
+    <p class="fa-footnote">* Player has a 2-year team option — will only reach free agency if the team declines their option</p>
+  `;
+}
+
+function buildRulesSectionInner() {
+  const proposed = RULES_DATA.proposed;
+  const history  = FORM_RESP_DATA;
+  let html = "";
+
+  if (proposed.length > 0) {
+    html += `<div class="rules-year-group">
+      <div class="rules-year-label">🔵 Pending Proposals</div>`;
+    for (const r of proposed) {
+      const total = (r.votesFor||0)+(r.votesAgainst||0);
+      const pct   = total > 0 ? Math.round(r.votesFor/total*100) : 0;
+      html += `<div class="rules-card">
+        <div class="rules-card-top">
+          <span class="rules-category ${catClass(r.category)}">${r.category}</span>
+          <span class="rules-proposal">${r.proposal}</span>
+          <span class="rules-status ${statusClass(r.status)}">${r.status||"Proposed"}</span>
+        </div>
+        ${r.rationale?`<div class="rules-rationale">${r.rationale}</div>`:""}
+        ${r.proposedBy?`<div class="rules-proposed-by">Proposed by: ${r.proposedBy}</div>`:""}
+        ${total>0?`<div class="rules-votes"><span class="rules-vote-for">✓ ${r.votesFor} for</span><span class="rules-vote-against">✗ ${r.votesAgainst} against</span></div><div class="rules-vote-bar"><div class="rules-vote-fill" style="width:${pct}%"></div></div>`:""}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  if (history.length > 0) {
+    const years = [...new Set(history.map(r=>r.year))].sort((a,b)=>b.localeCompare(a));
+    for (const year of years) {
+      const yearItems = history.filter(r=>r.year===year);
+      const passed = yearItems.filter(r=>r.passed);
+      const failed = yearItems.filter(r=>!r.passed);
+      html += `<div class="rules-year-group">
+        <div class="rules-year-label">📅 ${year} Winter Meetings — Vote Results (${passed.length} passed · ${failed.length} failed)</div>`;
+      for (const r of [...passed,...failed]) {
+        const pct = r.total>0?Math.round(r.votesFor/r.total*100):0;
+        const barColor = r.passed?"var(--good)":"var(--danger)";
+        html += `<div class="rules-card">
+          <div class="rules-card-top">
+            <span class="rules-category ${catClass(r.category)}">${r.category}</span>
+            <span class="rules-proposal">${r.proposal}</span>
+            <span class="rules-status ${r.passed?"passed":"failed"}">${r.passed?"✓ Passed":"✗ Failed"}</span>
+          </div>
+          <div class="rules-votes">
+            <span class="rules-vote-for">✓ ${r.votesFor} for</span>
+            <span class="rules-vote-against">✗ ${r.votesAgainst} against</span>
+            <span style="color:var(--text3);font-size:11px">(needed 8 of 12)</span>
+          </div>
+          <div class="rules-vote-bar"><div class="rules-vote-fill" style="width:${pct}%;background:${barColor}"></div></div>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+  }
+
+  if (!proposed.length && !history.length) {
+    html = `<div class="status-bar" style="color:var(--text2)">No rules changes data available yet.</div>`;
+  }
+  return html;
+}
+
+function buildCBAInner() {
+  const items = CBA_SECTIONS.map((s,i) => `
     <div class="cba-item">
       <button class="cba-trigger" onclick="toggleCBA(${i})" id="cba-btn-${i}">
         <span class="cba-num">${s.num}</span>
@@ -2613,27 +2795,10 @@ function buildCBA() {
       </div>
     </div>
   `).join("");
-
   return `
-    <div class="cba-wrap">
-      <div class="cba-header">
-        <h2>⚖️ Collective Bargaining Agreement</h2>
-        <span class="cba-meta">Revised May 9, 2025 · Commissioner: Drew Yoder</span>
-      </div>
-      <div class="cba-toc">
-        <div class="cba-toc-title">📋 Table of Contents — click any section to expand</div>
-        ${items}
-      </div>
-    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">Revised May 9, 2025 · Commissioner: Drew Yoder · Click any section to expand</p>
+    <div class="cba-toc">${items}</div>
   `;
-}
-
-function toggleCBA(i) {
-  const body = document.getElementById("cba-body-" + i);
-  const btn  = document.getElementById("cba-btn-" + i);
-  const isOpen = body.classList.contains("visible");
-  body.classList.toggle("visible", !isOpen);
-  btn.classList.toggle("open", !isOpen);
 }
 
 // ─────────────────────────────────────────────
@@ -2687,18 +2852,25 @@ async function loadData() {
 
     const payouts = parsePayouts(parseCSV(finCSV));
 
-    dashEl.innerHTML = `
-      ${buildSummary(teams, payouts)}
+    // Populate each section independently
+    document.getElementById("home-content").innerHTML = buildSummary(teams, payouts);
+
+    document.getElementById("financials-content").innerHTML = `
       <p class="sec-lbl">All 12 teams — click any card to expand</p>
       <div class="detail-panel" id="detail-panel"></div>
       <div class="teams-grid">${buildCards(teams)}</div>
-      ${buildFASection()}
-      ${buildRulesSection()}
-      ${buildCBA()}
     `;
+
+    document.getElementById("fa-content").innerHTML = buildFASectionInner(teams);
+    document.getElementById("rules-content").innerHTML = buildRulesSectionInner();
+    document.getElementById("cba-content").innerHTML = buildCBAInner();
+
+    // Build roster submenu
+    buildRosterSubmenu(teams);
 
     statusEl.style.display = "none";
     dashEl.style.display   = "block";
+    showSection("home");
 
     const now = new Date();
     document.getElementById("last-updated").textContent =
