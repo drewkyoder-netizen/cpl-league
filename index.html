@@ -209,7 +209,36 @@
   .fin-rank-bar-fill { height: 100%; border-radius: 3px; }
   .fin-rankings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
 
-  /* ── Collapsible section toggle ── */
+  /* ── Team Roster Page ── */
+  .roster-notice { font-size: 11px; color: var(--text3); background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 6px 10px; margin-bottom: 1rem; }
+  .roster-wrap { margin-bottom: 2rem; }
+  .roster-section-title { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .75rem; padding-bottom: .5rem; border-bottom: 0.5px solid var(--border); }
+  .roster-table-wrap { overflow-x: auto; background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 1.5rem; }
+  .roster-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 700px; }
+  .roster-table th { padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; background: var(--bg2); border-bottom: 0.5px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+  .roster-table th:hover { color: var(--text); }
+  .roster-table th.sorted-asc::after { content: " ▲"; font-size: 9px; }
+  .roster-table th.sorted-desc::after { content: " ▼"; font-size: 9px; }
+  .roster-table td { padding: 7px 10px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; white-space: nowrap; }
+  .roster-table tr:last-child td { border-bottom: none; }
+  .roster-table tr:hover td { background: var(--bg2); }
+  .roster-player-name { font-weight: 500; color: var(--text); }
+  .ct-badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; text-align: center; min-width: 52px; }
+  .ct-prearb  { background: #FEE2E2; color: #991B1B; }
+  .ct-arb     { background: #FEF3C7; color: #92400E; }
+  .ct-arb-est { background: #FEF3C7; color: #92400E; border: 1px dashed #D97706; }
+  .ct-vet     { background: #DBEAFE; color: #1E40AF; }
+  .ct-ext     { background: #D1FAE5; color: #065F46; }
+  .ct-to      { background: #EDE9FE; color: #4C1D95; }
+  .ct-ufa     { background: #F3F4F6; color: #6B7280; }
+  .ct-minor   { background: #F0FDF4; color: #166534; }
+  .ct-blank   { color: var(--text3); font-size: 11px; }
+  .roster-year-col { text-align: right; }
+  .roster-salary-total { font-size: 12px; font-weight: 500; color: var(--text); padding: 8px 10px; background: var(--bg2); border-top: 1px solid var(--border); text-align: right; }
+  .roster-totals-row td { background: var(--bg2); font-weight: 500; border-top: 1px solid var(--border2); }
+  .pos-badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 3px; background: var(--bg3); color: var(--text2); }
+
+  /* ── Collapsible section toggle ── */  /* ── Collapsible section toggle ── */
   .section-toggle-btn { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 4px 12px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); margin-left: auto; }
   .section-toggle-btn:hover { background: var(--bg2); }
   .section-collapsible { overflow: hidden; transition: max-height 0.3s ease; }
@@ -386,6 +415,7 @@ const FINANCE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBW
 // TODO: Replace the URL below with your League History tab CSV URL once you publish it
 const HISTORY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1547680400&single=true&output=csv";
 const PLAYER_SALARY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1073495754&single=true&output=csv";
+const CONTRACTS_CSV  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1365077649&single=true&output=csv";
 const RULES_CSV     = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1416486223&single=true&output=csv";
 const FORM_RESP_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=809192862&single=true&output=csv";
 
@@ -3069,14 +3099,10 @@ function toggleRosterMenu() {
 
 function showTeamRoster(teamName) {
   document.getElementById("roster-page-title").textContent = "📋 " + teamName;
-  document.getElementById("roster-content").innerHTML = `
-    <div class="status-bar" style="color:var(--text2)">
-      🚧 Roster details for <strong>${teamName}</strong> coming soon.
-    </div>
-  `;
+  document.getElementById("roster-content").innerHTML = buildTeamRosterPage(teamName);
   showSection("roster");
   // Mark sub-item active
-  document.querySelectorAll(".nav-item.sub-item").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".nav-item.sub-item:not(.fin-sub-item)").forEach(b => b.classList.remove("active"));
   const teamBtn = document.getElementById("roster-sub-" + teamName.replace(/[^a-z0-9]/gi,"_"));
   if (teamBtn) teamBtn.classList.add("active");
 }
@@ -3238,6 +3264,318 @@ function buildCBAInner() {
   `;
 }
 
+
+// ─────────────────────────────────────────────
+//  Team Roster — contracts + arb estimates
+// ─────────────────────────────────────────────
+
+// Arb salary estimates (median by position/arb year, 2021-2025 data)
+// NOTE: These are estimates only — actual figures updated each January from Spotrac
+const ARB_ESTIMATES = {
+  "C":  { "S2":1500000, "Arb1":2800000, "Arb2":3500000, "Arb3":6500000, "Arb4":8500000 },
+  "1B": { "S2":1700000, "Arb1":3200000, "Arb2":4000000, "Arb3":7500000, "Arb4":10000000 },
+  "2B": { "S2":1600000, "Arb1":3000000, "Arb2":3800000, "Arb3":7000000, "Arb4":9000000 },
+  "3B": { "S2":1800000, "Arb1":3400000, "Arb2":4200000, "Arb3":8000000, "Arb4":10500000 },
+  "SS": { "S2":2000000, "Arb1":3800000, "Arb2":4800000, "Arb3":9000000, "Arb4":12000000 },
+  "OF": { "S2":1800000, "Arb1":3300000, "Arb2":4200000, "Arb3":8000000, "Arb4":11000000 },
+  "SP": { "S2":2000000, "Arb1":3800000, "Arb2":5000000, "Arb3":9500000, "Arb4":13000000 },
+  "RP": { "S2":1600000, "Arb1":3000000, "Arb2":4000000, "Arb3":7500000, "Arb4":10000000 },
+};
+const PRE_ARB_SALARY = 750000;
+const CURRENT_YEAR  = 2026;
+const DISPLAY_YEARS = [2026, 2027, 2028, 2029, 2030, 2031];
+
+let CONTRACT_DATA = {}; // name -> { year -> salary }
+let ROSTER_SORT = { col: "name", dir: "asc" };
+
+function parseContractExtensions(rows) {
+  const data = {};
+  if (rows.length < 2) return data;
+  const headers = rows[0].map(h => h.trim());
+  // Find year columns (numeric headers)
+  const yearCols = {};
+  headers.forEach((h, i) => {
+    const yr = parseInt(h);
+    if (yr >= 2025 && yr <= 2035) yearCols[yr] = i;
+  });
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const name = r[0] ? r[0].trim() : "";
+    if (!name) continue;
+    data[name] = { contract: r[2] ? r[2].trim() : "Ext" };
+    Object.entries(yearCols).forEach(([yr, col]) => {
+      const val = r[col] ? parseMoney(r[col]) : 0;
+      if (val > 0) data[name][parseInt(yr)] = val;
+    });
+  }
+  return data;
+}
+
+// Get a player's salary for a given year based on contract type
+function getPlayerSalary(player, year) {
+  const name     = player.name;
+  const contract = (player.contract || "").toString().trim();
+  const cLower   = contract.toLowerCase();
+  const salary   = player.salary || 0;
+  const pos      = (player.position || "OF").split(",")[0].trim();
+  const posKey   = pos === "DH" ? "1B" : (ARB_ESTIMATES[pos] ? pos : "OF");
+
+  // Extension players — pull from CONTRACT_DATA
+  if (CONTRACT_DATA[name] && CONTRACT_DATA[name][year]) {
+    return { salary: CONTRACT_DATA[name][year], type: "ext", estimate: false };
+  }
+
+  // Min0 / minors — no salary on MLB roster
+  if (cLower === "min0") return { salary: 0, type: "minor", estimate: false };
+
+  // Contract number = years remaining (1, 2, 3, 4, 5, 6)
+  const yearsLeft = parseInt(contract);
+  if (!isNaN(yearsLeft)) {
+    const lastYear = CURRENT_YEAR + yearsLeft - 1;
+    if (year > lastYear) return { salary: 0, type: "ufa", estimate: false };
+    return { salary, type: "vet", estimate: false };
+  }
+
+  // Team options (2-TO, 3-TO) — treat like veteran years
+  if (cLower.includes("-to")) {
+    const toYears = parseInt(contract);
+    if (!isNaN(toYears)) {
+      const lastYear = CURRENT_YEAR + toYears - 1;
+      if (year > lastYear) return { salary: 0, type: "ufa", estimate: false };
+      return { salary, type: "to", estimate: false };
+    }
+  }
+
+  // Pre-arb minimums (Min1, Min2, Min3)
+  const minMatch = cLower.match(/^min(\d+)$/);
+  if (minMatch) {
+    const minYears = parseInt(minMatch[1]);
+    const lastMinYear = CURRENT_YEAR + minYears - 1;
+    if (year > lastMinYear) {
+      // Next would be Arb1
+      const arbYear = year - lastMinYear;
+      if (arbYear <= 3) {
+        const arbKey = "Arb" + arbYear;
+        const est = (ARB_ESTIMATES[posKey] || ARB_ESTIMATES["OF"])[arbKey] || 0;
+        return { salary: est, type: "arb", estimate: true };
+      }
+      return { salary: 0, type: "ufa", estimate: false };
+    }
+    return { salary: PRE_ARB_SALARY, type: "prearb", estimate: false };
+  }
+
+  // Super Two (S2)
+  if (cLower === "s2" || cLower.includes("super")) {
+    const est = (ARB_ESTIMATES[posKey] || ARB_ESTIMATES["OF"])["S2"] || 0;
+    return year === CURRENT_YEAR
+      ? { salary: est, type: "arb", estimate: true }
+      : { salary: 0, type: "ufa", estimate: false };
+  }
+
+  // Arb years (Arb1, Arb2, Arb3, Arb4)
+  const arbMatch = cLower.match(/^arb(\d+)$/);
+  if (arbMatch) {
+    const arbN = parseInt(arbMatch[1]);
+    // Current year is arbN, future years increment
+    for (let yr = CURRENT_YEAR; yr <= CURRENT_YEAR + (4 - arbN); yr++) {
+      const futureArbN = arbN + (yr - CURRENT_YEAR);
+      if (yr === year) {
+        if (futureArbN > 4) return { salary: 0, type: "ufa", estimate: false };
+        const arbKey = "Arb" + futureArbN;
+        const est = (ARB_ESTIMATES[posKey] || ARB_ESTIMATES["OF"])[arbKey] || salary;
+        // Current year may be manually entered, future years are estimates
+        const isEst = yr > CURRENT_YEAR || salary === 0;
+        return { salary: isEst ? est : salary, type: "arb", estimate: isEst };
+      }
+    }
+    return { salary: 0, type: "ufa", estimate: false };
+  }
+
+  // TBD
+  if (cLower === "tbd") return { salary: 0, type: "ufa", estimate: false };
+
+  // Ext without CONTRACT_DATA entry — show current salary
+  if (cLower.startsWith("ext")) {
+    return year === CURRENT_YEAR
+      ? { salary, type: "ext", estimate: false }
+      : { salary: 0, type: "ufa", estimate: false };
+  }
+
+  return { salary: 0, type: "ufa", estimate: false };
+}
+
+function fmtSalary(n) {
+  if (!n || n === 0) return "";
+  if (n >= 1000000) return "$" + (n/1000000).toFixed(2) + "M";
+  return "$" + (n/1000).toFixed(0) + "K";
+}
+
+function contractBadge(type, label, estimate) {
+  const classes = {
+    prearb: "ct-prearb", arb: estimate ? "ct-arb-est" : "ct-arb",
+    vet: "ct-vet", ext: "ct-ext", to: "ct-to",
+    ufa: "ct-ufa", minor: "ct-minor"
+  };
+  const labels = {
+    prearb: "PRE-ARB", arb: estimate ? "ARB~" : "ARB",
+    vet: label||"VET", ext: "EXT", to: "TO",
+    ufa: "UFA", minor: "MINOR"
+  };
+  const cls = classes[type] || "ct-blank";
+  const lbl = labels[type] || type.toUpperCase();
+  return `<span class="ct-badge ${cls}">${lbl}</span>`;
+}
+
+function buildTeamRosterPage(teamName) {
+  const allPlayers = UPCOMING_FA_LIVE.length > 0 ? [] : [];
+  // Pull from player salary sheet data
+  const teamPlayers = _rosterData ? _rosterData.filter(p => p.team === teamName) : [];
+
+  if (!teamPlayers.length) {
+    return `<div class="status-bar" style="color:var(--text2)">No roster data loaded yet. Make sure the Player Salary tab is published.</div>`;
+  }
+
+  const active  = teamPlayers.filter(p => !["Min0","min0"].includes((p.contract||"").toString()));
+  const minors  = teamPlayers.filter(p => ["Min0","min0"].includes((p.contract||"").toString()));
+
+  return `
+    <div class="roster-notice">
+      ⚠ Arbitration figures marked with <strong>ARB~</strong> are <em>estimates based on 2021–2025 median salaries by position</em>.
+      Actual figures are updated each January from Spotrac and entered manually.
+    </div>
+    ${buildRosterTable(teamName, active, "Active Roster")}
+    ${minors.length ? buildRosterTable(teamName, minors, "Minor League Roster") : ""}
+  `;
+}
+
+let _rosterSortState = {};
+
+function buildRosterTable(teamName, players, title) {
+  const sortKey = (_rosterSortState[title] || {}).col || "name";
+  const sortDir = (_rosterSortState[title] || {}).dir || "asc";
+  const isMinor = title.includes("Minor");
+
+  // Sort players
+  const sorted = [...players].sort((a, b) => {
+    let av, bv;
+    if (sortKey === "name")     { av = a.name;    bv = b.name;    return sortDir==="asc"?av.localeCompare(bv):bv.localeCompare(av); }
+    if (sortKey === "pos")      { av = a.position||""; bv = b.position||""; return sortDir==="asc"?av.localeCompare(bv):bv.localeCompare(av); }
+    if (sortKey === "salary")   { av = a.salary||0; bv = b.salary||0; }
+    else if (sortKey === "contract") { av = a.contract||""; bv = b.contract||""; return sortDir==="asc"?av.localeCompare(bv):bv.localeCompare(av); }
+    else {
+      const yr = parseInt(sortKey);
+      if (!isNaN(yr)) {
+        av = getPlayerSalary(a, yr).salary || 0;
+        bv = getPlayerSalary(b, yr).salary || 0;
+      } else {
+        av = 0; bv = 0;
+      }
+    }
+    return sortDir === "asc" ? av - bv : bv - av;
+  });
+
+  const safeTitle = title.replace(/\s+/g, "_");
+
+  function thSort(col, label) {
+    const isSorted = sortKey === col;
+    const cls = isSorted ? (sortDir === "desc" ? "sorted-desc" : "sorted-asc") : "";
+    return `<th class="${cls}" onclick="sortRosterTable(\'${teamName}\',\'${safeTitle}\',\'${col}\')">${label}</th>`;
+  }
+
+  // Year totals
+  const yearTotals = {};
+  DISPLAY_YEARS.forEach(yr => {
+    yearTotals[yr] = sorted.reduce((sum, p) => {
+      const s = getPlayerSalary(p, yr).salary || 0;
+      return sum + s;
+    }, 0);
+  });
+
+  const rows = sorted.map(p => {
+    const pos = p.position ? `<span class="pos-badge">${p.position.split(",")[0]}</span>` : "";
+    const yearCells = isMinor ? "" : DISPLAY_YEARS.map(yr => {
+      const result = getPlayerSalary(p, yr);
+      if (result.type === "ufa") return `<td class="roster-year-col"><span class="ct-badge ct-ufa">UFA</span></td>`;
+      if (result.type === "minor" || result.salary === 0) return `<td class="roster-year-col">—</td>`;
+      const badge = contractBadge(result.type, null, result.estimate);
+      return `<td class="roster-year-col">${fmtSalary(result.salary)} ${badge}</td>`;
+    }).join("");
+
+    const contractBadgeHtml = contractBadge(
+      ["Min0","min0"].includes((p.contract||"").toString()) ? "minor" :
+      (p.contract||"").toString().toLowerCase().startsWith("min") ? "prearb" :
+      (p.contract||"").toString().toLowerCase().startsWith("arb") ? "arb" :
+      (p.contract||"").toString().toLowerCase().startsWith("ext") ? "ext" :
+      (p.contract||"").toString().toLowerCase().includes("-to") ? "to" :
+      !isNaN(parseInt(p.contract)) ? "vet" : "ufa",
+      p.contract, false
+    );
+
+    return `<tr>
+      <td><span class="roster-player-name">${p.name}</span></td>
+      <td>${pos}</td>
+      <td>${fmtSalary(p.salary)}</td>
+      <td>${contractBadgeHtml}</td>
+      ${yearCells}
+    </tr>`;
+  }).join("");
+
+  const totalRow = isMinor ? "" : `<tr class="roster-totals-row">
+    <td colspan="4"><strong>Team Total</strong></td>
+    ${DISPLAY_YEARS.map(yr => `<td class="roster-year-col"><strong>${fmtSalary(yearTotals[yr])}</strong></td>`).join("")}
+  </tr>`;
+
+  const yearHeaders = isMinor ? "" : DISPLAY_YEARS.map(yr => thSort(yr.toString(), yr.toString())).join("");
+
+  return `
+    <div class="roster-wrap">
+      <div class="roster-section-title">${title} (${sorted.length} players)</div>
+      <div class="roster-table-wrap">
+        <table class="roster-table" id="roster-tbl-${safeTitle}">
+          <thead><tr>
+            ${thSort("name","Player")}
+            ${thSort("pos","Pos")}
+            ${thSort("salary","Current Salary")}
+            ${thSort("contract","Contract")}
+            ${yearHeaders}
+          </tr></thead>
+          <tbody>${rows}</tbody>
+          ${totalRow ? `<tfoot>${totalRow}</tfoot>` : ""}
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function sortRosterTable(teamName, tableTitle, col) {
+  const key = tableTitle;
+  const cur = _rosterSortState[key] || { col: "name", dir: "asc" };
+  _rosterSortState[key] = {
+    col,
+    dir: cur.col === col ? (cur.dir === "asc" ? "desc" : "asc") : (col === "name" || col === "pos" || col === "contract" ? "asc" : "desc")
+  };
+  document.getElementById("roster-content").innerHTML = buildTeamRosterPage(teamName);
+}
+
+let _rosterData = [];
+
+function parseRosterData(rows) {
+  const players = [];
+  if (rows.length < 2) return players;
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[0] || !r[0].trim()) continue;
+    players.push({
+      name:     r[0].trim(),
+      salary:   parseMoney(r[1]),
+      team:     r[2] ? r[2].trim() : "",
+      contract: r[3] ? r[3].trim() : "",
+      position: r[4] ? r[4].trim() : "",
+    });
+  }
+  return players;
+}
+
 // ─────────────────────────────────────────────
 //  Main load
 // ─────────────────────────────────────────────
@@ -3285,6 +3623,24 @@ async function loadData() {
       FORM_RESP_DATA = parseFormResponses(parseCSV(formCSV));
     } catch(e) {
       console.warn("Form responses tab failed to load", e);
+    }
+
+    // Load player salary tab for roster data
+    try {
+      const playerCSV2 = await fetchCSV(PLAYER_SALARY_CSV);
+      _rosterData = parseRosterData(parseCSV(playerCSV2));
+      console.log("Roster data loaded:", _rosterData.length, "players");
+    } catch(e) {
+      console.warn("Roster data failed to load", e);
+    }
+
+    // Load contract extensions tab
+    try {
+      const contractCSV = await fetchCSV(CONTRACTS_CSV);
+      CONTRACT_DATA = parseContractExtensions(parseCSV(contractCSV));
+      console.log("Contract extensions loaded:", Object.keys(CONTRACT_DATA).length, "players");
+    } catch(e) {
+      console.warn("Contract extensions failed to load", e);
     }
 
     const payouts = parsePayouts(parseCSV(finCSV));
