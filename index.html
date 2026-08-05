@@ -421,20 +421,26 @@ async function fetchCSV(url) {
 // ─────────────────────────────────────────────
 //  Team meta (colors, abbreviations — stable)
 // ─────────────────────────────────────────────
+const LOGO_BASE = "https://drewkyoder-netizen.github.io/cpl-league/";
+
 const TEAM_META = {
-  "Kansas City Royals":    { abbr:"KC",  color1:"#174185", color2:"#C09A5B", text:"#C09A5B", owner:"Jon Gelber",      phone:"408.219.5578" },
-  "Seattle Mariners":      { abbr:"SEA", color1:"#005C5C", color2:"#C4CED4", text:"#C4CED4", owner:"Dirk Adkinson",   phone:"425.275.6981" },
-  "Los Angeles Dodgers":   { abbr:"LAD", color1:"#005A9C", color2:"#EF3E42", text:"#fff",    owner:"David Fatoki",    phone:"708.926.4528" },
-  "Los Angeles Angels":    { abbr:"LAA", color1:"#BA0021", color2:"#003263", text:"#fff",    owner:"Kirk Lacob",      phone:"650.380.4444" },
-  "Texas Rangers":         { abbr:"TEX", color1:"#003278", color2:"#C0111F", text:"#fff",    owner:"Jake Gavlick",    phone:"210.302.2044" },
-  "Milwaukee Brewers":     { abbr:"MIL", color1:"#12284B", color2:"#FFC52F", text:"#FFC52F", owner:"Jason Stein",     phone:"408.761.5148" },
-  "Las Vegas A's":         { abbr:"LV",  color1:"#003831", color2:"#EFB21E", text:"#EFB21E", owner:"Chris Poulson",   phone:"925.858.2215" },
-  "Chicago Cubs":          { abbr:"CHC", color1:"#0E3386", color2:"#CC3433", text:"#fff",    owner:"Drew Yoder",      phone:"510.693.4069" },
-  "San Diego Padres":      { abbr:"SD",  color1:"#2F241D", color2:"#FFC425", text:"#FFC425", owner:"Bert Ortiz",      phone:"925.918.0140" },
-  "Baltimore Orioles":     { abbr:"BAL", color1:"#DF4601", color2:"#000000", text:"#fff",    owner:"David Cortez",    phone:"510.508.5286" },
-  "San Francisco Giants":  { abbr:"SF",  color1:"#FD5A1E", color2:"#27251F", text:"#fff",    owner:"Mac Osborn",      phone:"650.862.0740" },
+  "Kansas City Royals":    { abbr:"KC",  color1:"#174185", color2:"#C09A5B", text:"#C09A5B", owner:"Jon Gelber",      phone:"408.219.5578", logo:"kc.png"  },
+  "Seattle Mariners":      { abbr:"SEA", color1:"#005C5C", color2:"#C4CED4", text:"#C4CED4", owner:"Dirk Adkinson",   phone:"425.275.6981", logo:"sea.png" },
+  "Los Angeles Dodgers":   { abbr:"LAD", color1:"#005A9C", color2:"#EF3E42", text:"#fff",    owner:"David Fatoki",    phone:"708.926.4528", logo:"lad.png" },
+  "Los Angeles Angels":    { abbr:"LAA", color1:"#BA0021", color2:"#003263", text:"#fff",    owner:"Kirk Lacob",      phone:"650.380.4444", logo:"laa.png" },
+  "Texas Rangers":         { abbr:"TEX", color1:"#003278", color2:"#C0111F", text:"#fff",    owner:"Jake Gavlick",    phone:"210.302.2044", logo:"tex.png" },
+  "Milwaukee Brewers":     { abbr:"MIL", color1:"#12284B", color2:"#FFC52F", text:"#FFC52F", owner:"Jason Stein",     phone:"408.761.5148", logo:"mil.png" },
+  "Las Vegas A's":         { abbr:"LV",  color1:"#003831", color2:"#EFB21E", text:"#EFB21E", owner:"Chris Poulson",   phone:"925.858.2215", logo:"lv.png"  },
+  "Chicago Cubs":          { abbr:"CHC", color1:"#0E3386", color2:"#CC3433", text:"#fff",    owner:"Drew Yoder",      phone:"510.693.4069", logo:"chc.png" },
+  "San Diego Padres":      { abbr:"SD",  color1:"#2F241D", color2:"#FFC425", text:"#FFC425", owner:"Bert Ortiz",      phone:"925.918.0140", logo:"sd.png"  },
+  "Baltimore Orioles":     { abbr:"BAL", color1:"#DF4601", color2:"#000000", text:"#fff",    owner:"David Cortez",    phone:"510.508.5286", logo:"bal.png" },
+  "San Francisco Giants":  { abbr:"SF",  color1:"#FD5A1E", color2:"#27251F", text:"#fff",    owner:"Mac Osborn",      phone:"650.862.0740", logo:"sf.png"  },
   "Cincinnati Reds":       { abbr:"CIN", color1:"#C6011F", color2:"#000000", text:"#fff",    owner:"Sean Wasserman",  phone:"408.348.8256" },
 };
+
+
+
+
 
 // ─────────────────────────────────────────────
 //  Parse League History CSV
@@ -580,8 +586,23 @@ const fmtPts = v => v.toLocaleString("en-US", {maximumFractionDigits:3});
 
 function barColor(pct) { return pct > 100 ? "#A32D2D" : pct > 96 ? "#BA7517" : "#3B6D11"; }
 
-function logoHtml(meta, size, radius) {
-  return `<div class="tlogo" style="width:${size}px;height:${size}px;border-radius:${radius}px;background:${meta.color1};color:${meta.text};font-size:${size<40?10:13}px;border:2px solid ${meta.color2};flex-shrink:0">${meta.abbr}</div>`;
+// logoHtml() deprecated — use teamLogo(name, size)
+
+// ── Logo helper — circular logo with colored-badge fallback ──
+function teamLogo(name, size) {
+  size = size || 36;
+  var meta = TEAM_META[name] || {};
+  var r  = Math.floor(size / 2);
+  var fs = Math.round(size * 0.28);
+  var c1 = meta.color1 || '#888';
+  var tx = meta.text || '#fff';
+  var ab = meta.abbr || '';
+  if (meta.logo) {
+    var imgStyle = 'border-radius:'+r+'px;object-fit:contain;background:'+c1+';flex-shrink:0;display:inline-block;vertical-align:middle';
+    return '<img src="'+LOGO_BASE+meta.logo+'" alt="'+ab+'" width="'+size+'" height="'+size+'" style="'+imgStyle+'">';
+  }
+  var badgeStyle = 'width:'+size+'px;height:'+size+'px;border-radius:'+r+'px;background:'+c1+';color:'+tx+';display:inline-flex;align-items:center;justify-content:center;font-size:'+fs+'px;font-weight:500;flex-shrink:0;vertical-align:middle';
+  return '<div style="'+badgeStyle+'">'+ab+'</div>';
 }
 
 // ─────────────────────────────────────────────
@@ -702,7 +723,7 @@ function buildHistTable() {
     const cells = cols.map(c => {
       if (c.special === "team") {
         return `<td><div class="hist-team-cell">
-          <span class="hist-team-dot" style="background:${meta.color1||"#888"}"></span>
+          ${teamLogo(r.name, 24)}
           <span>${r.name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD")}</span>
         </div></td>`;
       }
@@ -749,7 +770,7 @@ function buildCards(teams) {
     const spaceStr = space >= 0 ? fmtM(space)+" available" : fmtM(Math.abs(space))+" over cap";
     return `<div class="tc" id="card-${i}" onclick="expandTeam(${i})">
       <div class="th">
-        ${logoHtml(meta, 36, 8)}
+        ${teamLogo(t.name||name, 36)}
         <div>
           <div class="tname">${t.name}</div>
           <div class="tsub">${fmtM(total)} cap hit · ${spaceStr}</div>
@@ -791,7 +812,7 @@ function expandTeam(i) {
   const panel = document.getElementById("detail-panel");
   panel.innerHTML = `
     <div class="p-top">
-      ${logoHtml(meta, 52, 10)}
+      ${teamLogo(t.name, 52)}
       <div>
         <div class="p-name">${t.name}</div>
         <div class="p-sub">${meta.owner} · ${meta.phone}</div>
@@ -2859,7 +2880,7 @@ function buildFinancialsSubmenu(teams) {
     const id   = "fin-sub-" + (t.name||"").replace(/[^a-z0-9]/gi,"_");
     const short = t.name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD");
     return `<button class="nav-item sub-item fin-sub-item" id="${id}" onclick="showTeamFinancials(\'${t.name.replace(/'/g,"\\'")}\');showSection(\'financials\')">
-      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${meta.color1||"#888"};margin-right:6px;flex-shrink:0"></span>
+      ${teamLogo(t.name, 22)}
       ${short}
     </button>`;
   }).join("");
@@ -2882,7 +2903,7 @@ function buildFinancialsHome() {
         const col  = colorFn ? colorFn(t) : "#378ADD";
         return `<div class="fin-rank-row">
           <span class="fin-rank-num">${i+1}</span>
-          <span class="fin-rank-dot" style="background:${meta.color1||"#888"}"></span>
+          ${teamLogo(t.name, 24)}
           <span class="fin-rank-name">${t.name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD")}</span>
           <div class="fin-rank-bar-wrap"><div class="fin-rank-bar-bg"><div class="fin-rank-bar-fill" style="width:${pct}%;background:${col}"></div></div></div>
           <span class="fin-rank-val" style="color:${col}">${val}</span>
@@ -2925,7 +2946,7 @@ function buildTeamFinancialDetail(teamName) {
   // Reuse the existing expandTeam detail panel HTML
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.25rem">
-      <div style="width:52px;height:52px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:13px;background:${meta.color1||"#888"};color:${meta.text||"#fff"};border:2px solid ${meta.color2||"#ccc"}">${meta.abbr||""}</div>
+      ${teamLogo(t.name, 52)}
       <div>
         <div style="font-size:16px;font-weight:500;color:var(--text)">${t.name}</div>
         <div style="font-size:12px;color:var(--text2)">${meta.owner||""} · ${meta.phone||""}</div>
@@ -3074,7 +3095,7 @@ function buildRosterSubmenu(teams) {
     const meta = TEAM_META[t.name] || {};
     const id   = "roster-sub-" + (t.name||"").replace(/[^a-z0-9]/gi,"_");
     return `<button class="nav-item sub-item" id="${id}" onclick="showTeamRoster(\'${t.name.replace(/'/g,"\\'")}\')">
-      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${meta.color1||"#888"};margin-right:6px;flex-shrink:0"></span>
+      ${teamLogo(t.name, 22)}
       ${t.name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD")}
     </button>`;
   }).join("");
