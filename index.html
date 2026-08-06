@@ -209,34 +209,78 @@
   .fin-rank-bar-fill { height: 100%; border-radius: 3px; }
   .fin-rankings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
 
+  /* ── League Home pot boxes ── */
+  .pot-boxes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .pot-box { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .85rem 1rem; }
+  .pot-box-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+  .pot-box-val { font-size: 20px; font-weight: 500; color: var(--good); }
+  .pot-box-total { background: var(--bg); border: 2px solid var(--good); border-radius: var(--radius-lg); padding: .85rem 1rem; }
+  .pot-box-total .pot-box-label { color: var(--good); font-weight: 500; }
+  .pot-box-total .pot-box-val { font-size: 26px; color: var(--good); }
+
+  /* ── Team Financials combined table ── */
+  .fin-table-wrap { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow-x: auto; margin-bottom: 1.5rem; }
+  .fin-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
+  .fin-table th { padding: 9px 12px; text-align: right; font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; background: var(--bg2); border-bottom: 0.5px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; }
+  .fin-table th:first-child { text-align: left; }
+  .fin-table th:hover { color: var(--text); }
+  .fin-table th.sorted-asc::after { content: " ▲"; font-size: 9px; }
+  .fin-table th.sorted-desc::after { content: " ▼"; font-size: 9px; }
+  .fin-table td { padding: 9px 12px; border-bottom: 0.5px solid var(--border); text-align: right; vertical-align: middle; }
+  .fin-table td:first-child { text-align: left; }
+  .fin-table tr:last-child td { border-bottom: none; }
+  .fin-table tr:hover td { background: var(--bg2); cursor: pointer; }
+  .fin-team-cell { display: flex; align-items: center; gap: 9px; }
+  .fin-val-pos { color: var(--good); font-weight: 500; }
+  .fin-val-neg { color: var(--danger); font-weight: 500; }
+  .fin-val-warn { color: var(--warn); font-weight: 500; }
+
   /* ── Team Roster Page ── */
   .roster-notice { font-size: 11px; color: var(--text3); background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 6px 10px; margin-bottom: 1rem; }
   .roster-wrap { margin-bottom: 2rem; }
-  .roster-section-title { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .75rem; padding-bottom: .5rem; border-bottom: 0.5px solid var(--border); }
+  .roster-section-title { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .5rem; padding-bottom: .5rem; border-bottom: 0.5px solid var(--border); }
+  .roster-legend { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: .75rem; }
   .roster-table-wrap { overflow-x: auto; background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 1.5rem; }
-  .roster-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 700px; }
-  .roster-table th { padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; background: var(--bg2); border-bottom: 0.5px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+  .roster-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .roster-table th { padding: 8px 10px; text-align: center; font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; background: var(--bg2); border-bottom: 0.5px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+  .roster-table th:first-child { text-align: left; }
   .roster-table th:hover { color: var(--text); }
   .roster-table th.sorted-asc::after { content: " ▲"; font-size: 9px; }
   .roster-table th.sorted-desc::after { content: " ▼"; font-size: 9px; }
-  .roster-table td { padding: 7px 10px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; white-space: nowrap; }
+  .roster-table td { padding: 6px 10px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; white-space: nowrap; text-align: center; }
+  .roster-table td:first-child { text-align: left; }
   .roster-table tr:last-child td { border-bottom: none; }
   .roster-table tr:hover td { background: var(--bg2); }
   .roster-player-name { font-weight: 500; color: var(--text); }
-  .ct-badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; text-align: center; min-width: 52px; }
-  .ct-prearb  { background: #FEE2E2; color: #991B1B; }
-  .ct-arb     { background: #FEF3C7; color: #92400E; }
-  .ct-arb-est { background: #FEF3C7; color: #92400E; border: 1px dashed #D97706; }
-  .ct-vet     { background: #DBEAFE; color: #1E40AF; }
-  .ct-ext     { background: #D1FAE5; color: #065F46; }
-  .ct-to      { background: #EDE9FE; color: #4C1D95; }
-  .ct-ufa     { background: #F3F4F6; color: #6B7280; }
-  .ct-minor   { background: #F0FDF4; color: #166534; }
+  /* Contract pill colors — salary shown inside pill */
+  .ct-badge { display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 4px; text-align: center; min-width: 70px; gap: 4px; }
+  .ct-prearb  { background: #DC2626; color: #fff; }
+  .ct-arb     { background: #D97706; color: #fff; }
+  .ct-arb-est { background: #D97706; color: #fff; opacity: 0.85; }
+  .ct-vet     { background: #2563EB; color: #fff; }
+  .ct-ext     { background: #059669; color: #fff; }
+  .ct-to      { background: #7C3AED; color: #fff; }
+  .ct-ufa     { background: #6B7280; color: #fff; }
+  .ct-minor   { background: #16A34A; color: #fff; }
   .ct-blank   { color: var(--text3); font-size: 11px; }
-  .roster-year-col { text-align: right; }
-  .roster-salary-total { font-size: 12px; font-weight: 500; color: var(--text); padding: 8px 10px; background: var(--bg2); border-top: 1px solid var(--border); text-align: right; }
-  .roster-totals-row td { background: var(--bg2); font-weight: 500; border-top: 1px solid var(--border2); }
-  .pos-badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 3px; background: var(--bg3); color: var(--text2); }
+  .ct-est-italic { font-style: italic; }
+  .roster-year-col { text-align: center; }
+  .roster-totals-row td { background: var(--bg2); font-weight: 500; border-top: 1px solid var(--border2); text-align: center; }
+  .roster-totals-row td:first-child { text-align: left; }
+  /* Position badge colors matching FA page */
+  .pos-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
+  .pos-C   { background: #2563EB22; color: #2563EB; }
+  .pos-1B  { background: #16A34A22; color: #16A34A; }
+  .pos-2B  { background: #05966922; color: #059669; }
+  .pos-3B  { background: #D9770622; color: #D97706; }
+  .pos-SS  { background: #DC262622; color: #DC2626; }
+  .pos-OF  { background: #7C3AED22; color: #7C3AED; }
+  .pos-UT  { background: #88888822; color: #888888; }
+  .pos-SP  { background: #0891B222; color: #0891B2; }
+  .pos-RP  { background: #BE185D22; color: #BE185D; }
+  /* Minor league compact table */
+  .minor-table { font-size: 11px; }
+  .minor-table td, .minor-table th { padding: 4px 8px; }
 
   /* ── Collapsible section toggle ── */  /* ── Collapsible section toggle ── */
   .section-toggle-btn { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 4px 12px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); margin-left: auto; }
@@ -628,7 +672,7 @@ function teamLogo(name, size) {
   var tx = meta.text || '#fff';
   var ab = meta.abbr || '';
   if (meta.logo) {
-    var imgStyle = 'border-radius:'+r+'px;object-fit:contain;background:'+c1+';flex-shrink:0;display:inline-block;vertical-align:middle';
+    var imgStyle = 'border-radius:'+r+'px;object-fit:contain;background:#fff;flex-shrink:0;display:inline-block;vertical-align:middle';
     return '<img src="'+LOGO_BASE+meta.logo+'" alt="'+ab+'" width="'+size+'" height="'+size+'" style="'+imgStyle+'">';
   }
   var badgeStyle = 'width:'+size+'px;height:'+size+'px;border-radius:'+r+'px;background:'+c1+';color:'+tx+';display:inline-flex;align-items:center;justify-content:center;font-size:'+fs+'px;font-weight:500;flex-shrink:0;vertical-align:middle';
@@ -700,17 +744,18 @@ function buildLeagueHome(teams, payouts) {
   const totalPot = payouts.reduce((s,p)=>s+p.amount,0);
   const fmtD = v => "$"+Math.abs(v).toFixed(2);
 
-  // Payout panel
-  const payoutRows = [...payouts]
-    .sort((a,b)=>b.amount-a.amount)
-    .map(p=>`<div class="home-payout-row"><span style="color:var(--text2)">${p.label}</span><span style="font-weight:500">${fmtD(p.amount)}</span></div>`)
-    .join("");
+  const sortedPayouts = [...payouts].sort((a,b)=>b.amount-a.amount);
+  const boxes = sortedPayouts.map(p =>
+    `<div class="pot-box"><div class="pot-box-label">${p.label}</div><div class="pot-box-val">${fmtD(p.amount)}</div></div>`
+  ).join("");
 
-  const potPanel = `<div class="panel-card" style="margin-bottom:1.5rem">
-    <div class="panel-title">Total pot & payouts</div>
-    <div style="font-size:26px;font-weight:500;color:var(--text);margin-bottom:.75rem">${fmtD(totalPot)}</div>
-    ${payoutRows}
-  </div>`;
+  const potPanel = `
+    <div class="pot-box pot-box-total" style="margin-bottom:.75rem">
+      <div class="pot-box-label">Total Pot</div>
+      <div class="pot-box-val">${fmtD(totalPot)}</div>
+    </div>
+    <div class="pot-boxes-grid" style="margin-bottom:1.5rem">${boxes}</div>
+  `;
 
   return potPanel + buildHistTable();
 }
@@ -754,7 +799,7 @@ function buildHistTable() {
       if (c.special === "team") {
         return `<td><div class="hist-team-cell">
           ${teamLogo(r.name, 24)}
-          <span>${r.name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD")}</span>
+          <span>${r.name}</span>
         </div></td>`;
       }
       const val = c.fmt(r, r);
@@ -2908,7 +2953,7 @@ function buildFinancialsSubmenu(teams) {
   submenu.innerHTML = sorted.map(t => {
     const meta = TEAM_META[t.name] || {};
     const id   = "fin-sub-" + (t.name||"").replace(/[^a-z0-9]/gi,"_");
-    const short = t.name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD");
+    const short = t.name;
     return `<button class="nav-item sub-item fin-sub-item" id="${id}" onclick="showTeamFinancials(\'${t.name.replace(/'/g,"\\'")}\');showSection(\'financials\')">
       ${teamLogo(t.name, 22)}
       ${short}
@@ -2934,7 +2979,7 @@ function buildFinancialsHome() {
         return `<div class="fin-rank-row">
           <span class="fin-rank-num">${i+1}</span>
           ${teamLogo(t.name, 24)}
-          <span class="fin-rank-name">${t.name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD")}</span>
+          <span class="fin-rank-name">${t.name}</span>
           <div class="fin-rank-bar-wrap"><div class="fin-rank-bar-bg"><div class="fin-rank-bar-fill" style="width:${pct}%;background:${col}"></div></div></div>
           <span class="fin-rank-val" style="color:${col}">${val}</span>
         </div>`;
@@ -3122,7 +3167,7 @@ function buildRosterSubmenu(teams) {
     const id   = "roster-sub-" + (t.name||"").replace(/[^a-z0-9]/gi,"_");
     return `<button class="nav-item sub-item" id="${id}" onclick="showTeamRoster(\'${t.name.replace(/'/g,"\\'")}\')">
       ${teamLogo(t.name, 22)}
-      ${t.name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD")}
+      ${t.name}
     </button>`;
   }).join("");
 }
@@ -3186,6 +3231,7 @@ function buildRulesSectionInner() {
   const history  = FORM_RESP_DATA;
   let html = "";
 
+  // ── Pending Proposals (always open) ──
   if (proposed.length > 0) {
     html += `<div class="rules-year-group">
       <div class="rules-year-label">🔵 Pending Proposals</div>`;
@@ -3206,36 +3252,58 @@ function buildRulesSectionInner() {
     html += `</div>`;
   }
 
+  // ── Historical results grouped by year, each year collapsed by default ──
+  // Within each year, group by category with accordion
   if (history.length > 0) {
     const years = [...new Set(history.map(r=>r.year))].sort((a,b)=>b.localeCompare(a));
-    for (const year of years) {
+    years.forEach((year, yi) => {
       const yearItems = history.filter(r=>r.year===year);
-      const passed = yearItems.filter(r=>r.passed);
-      const failed = yearItems.filter(r=>!r.passed);
-      html += `<div class="rules-year-group">
-        <div class="rules-year-label">📅 ${year} Winter Meetings — Vote Results (${passed.length} passed · ${failed.length} failed)</div>`;
-      const sortedYear = sortByCategory(yearItems);
-      const sortedPassed = sortedYear.filter(r=>r.passed);
-      const sortedFailed = sortedYear.filter(r=>!r.passed);
-      for (const r of [...sortedPassed,...sortedFailed]) {
-        const pct = r.total>0?Math.round(r.votesFor/r.total*100):0;
-        const barColor = r.passed?"var(--good)":"var(--danger)";
-        html += `<div class="rules-card">
-          <div class="rules-card-top">
-            <span class="rules-category ${catClass(r.category)}">${r.category}</span>
-            <span class="rules-proposal">${r.proposal}</span>
-            <span class="rules-status ${r.passed?"passed":"failed"}">${r.passed?"✓ Passed":"✗ Failed"}</span>
-          </div>
-          <div class="rules-votes">
-            <span class="rules-vote-for">✓ ${r.votesFor} for</span>
-            <span class="rules-vote-against">✗ ${r.votesAgainst} against</span>
-            <span style="color:var(--text3);font-size:11px">(needed 8 of 12)</span>
-          </div>
-          <div class="rules-vote-bar"><div class="rules-vote-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      const passed = yearItems.filter(r=>r.passed).length;
+      const failed = yearItems.filter(r=>!r.passed).length;
+
+      // Group by category
+      const cats = [...new Set(sortByCategory(yearItems).map(r=>r.category))];
+      const catAccordions = cats.map((cat, ci) => {
+        const catItems = sortByCategory(yearItems.filter(r=>r.category===cat));
+        const catPassed = catItems.filter(r=>r.passed).length;
+        const bodyId = `rules-cat-${yi}-${ci}`;
+        const rows = catItems.map(r => {
+          const pct = r.total>0?Math.round(r.votesFor/r.total*100):0;
+          const barColor = r.passed?"var(--good)":"var(--danger)";
+          return `<div class="rules-card" style="margin-left:1rem;margin-bottom:6px">
+            <div class="rules-card-top">
+              <span class="rules-proposal">${r.proposal}</span>
+              <span class="rules-status ${r.passed?"passed":"failed"}">${r.passed?"✓ Passed":"✗ Failed"}</span>
+            </div>
+            <div class="rules-votes">
+              <span class="rules-vote-for">✓ ${r.votesFor} for</span>
+              <span class="rules-vote-against">✗ ${r.votesAgainst} against</span>
+              <span style="color:var(--text3);font-size:11px">(needed 8/12)</span>
+            </div>
+            <div class="rules-vote-bar"><div class="rules-vote-fill" style="width:${pct}%;background:${barColor}"></div></div>
+          </div>`;
+        }).join("");
+
+        return `<div style="margin-bottom:4px">
+          <button class="cba-trigger" onclick="toggleEl(\'${bodyId}\')" style="padding:6px 12px;font-size:12px">
+            <span class="rules-category ${catClass(cat)}" style="margin-right:6px">${cat}</span>
+            <span style="color:var(--text2);font-size:11px">${catPassed}/${catItems.length} passed</span>
+            <span class="cba-arrow" id="${bodyId}-arrow" style="margin-left:auto">▶</span>
+          </button>
+          <div id="${bodyId}" style="display:none;padding:6px 0">${rows}</div>
         </div>`;
-      }
-      html += `</div>`;
-    }
+      }).join("");
+
+      const sectionId = `rules-year-${yi}`;
+      html += `<div class="rules-year-group">
+        <button class="cba-trigger" onclick="toggleEl(\'${sectionId}\')" style="width:100%;padding:10px 12px;font-size:13px;font-weight:500">
+          <span>📅 ${year} Winter Meetings</span>
+          <span style="font-size:11px;font-weight:400;color:var(--text2);margin-left:8px">${passed} passed · ${failed} failed</span>
+          <span class="cba-arrow" id="${sectionId}-arrow" style="margin-left:auto">▶</span>
+        </button>
+        <div id="${sectionId}" style="display:none;padding:8px 0">${catAccordions}</div>
+      </div>`;
+    });
   }
 
   if (!proposed.length && !history.length) {
@@ -3244,443 +3312,13 @@ function buildRulesSectionInner() {
   return html;
 }
 
-function buildCBAInner() {
-  const items = CBA_SECTIONS.map((s,i) => `
-    <div class="cba-item">
-      <button class="cba-trigger" onclick="toggleCBA(${i})" id="cba-btn-${i}">
-        <span class="cba-num">${s.num}</span>
-        <span class="cba-title">${s.title}</span>
-        <span class="cba-arrow">▶</span>
-      </button>
-      <div class="cba-body" id="cba-body-${i}">
-        <hr class="cba-divider">
-        ${s.content}
-      </div>
-    </div>
-  `).join("");
-  return `
-    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">Revised May 9, 2025 · Commissioner: Drew Yoder · Click any section to expand</p>
-    <div class="cba-toc">${items}</div>
-  `;
+function toggleEl(id) {
+  const el  = document.getElementById(id);
+  const arr = document.getElementById(id+"-arrow");
+  if (!el) return;
+  const isHidden = el.style.display === "none";
+  el.style.display = isHidden ? "block" : "none";
+  if (arr) arr.style.transform = isHidden ? "rotate(90deg)" : "";
 }
 
 
-// ─────────────────────────────────────────────
-//  Team Roster — contracts + arb estimates
-// ─────────────────────────────────────────────
-
-// Arb salary estimates (median by position/arb year, 2021-2025 data)
-// NOTE: These are estimates only — actual figures updated each January from Spotrac
-const ARB_ESTIMATES = {
-  "C":  { "S2":1500000, "Arb1":2800000, "Arb2":3500000, "Arb3":6500000, "Arb4":8500000 },
-  "1B": { "S2":1700000, "Arb1":3200000, "Arb2":4000000, "Arb3":7500000, "Arb4":10000000 },
-  "2B": { "S2":1600000, "Arb1":3000000, "Arb2":3800000, "Arb3":7000000, "Arb4":9000000 },
-  "3B": { "S2":1800000, "Arb1":3400000, "Arb2":4200000, "Arb3":8000000, "Arb4":10500000 },
-  "SS": { "S2":2000000, "Arb1":3800000, "Arb2":4800000, "Arb3":9000000, "Arb4":12000000 },
-  "OF": { "S2":1800000, "Arb1":3300000, "Arb2":4200000, "Arb3":8000000, "Arb4":11000000 },
-  "SP": { "S2":2000000, "Arb1":3800000, "Arb2":5000000, "Arb3":9500000, "Arb4":13000000 },
-  "RP": { "S2":1600000, "Arb1":3000000, "Arb2":4000000, "Arb3":7500000, "Arb4":10000000 },
-};
-const PRE_ARB_SALARY = 750000;
-const CURRENT_YEAR  = 2026;
-const DISPLAY_YEARS = [2026, 2027, 2028, 2029, 2030, 2031];
-
-let CONTRACT_DATA = {}; // name -> { year -> salary }
-let ROSTER_SORT = { col: "name", dir: "asc" };
-
-function parseContractExtensions(rows) {
-  const data = {};
-  if (rows.length < 2) return data;
-  const headers = rows[0].map(h => h.trim());
-  // Find year columns (numeric headers)
-  const yearCols = {};
-  headers.forEach((h, i) => {
-    const yr = parseInt(h);
-    if (yr >= 2025 && yr <= 2035) yearCols[yr] = i;
-  });
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    const name = r[0] ? r[0].trim() : "";
-    if (!name) continue;
-    data[name] = { contract: r[2] ? r[2].trim() : "Ext" };
-    Object.entries(yearCols).forEach(([yr, col]) => {
-      const val = r[col] ? parseMoney(r[col]) : 0;
-      if (val > 0) data[name][parseInt(yr)] = val;
-    });
-  }
-  return data;
-}
-
-// Get a player's salary for a given year based on contract type
-function getPlayerSalary(player, year) {
-  const name     = player.name;
-  const contract = (player.contract || "").toString().trim();
-  const cLower   = contract.toLowerCase();
-  const salary   = player.salary || 0;
-  const pos      = (player.position || "OF").split(",")[0].trim();
-  const posKey   = pos === "DH" ? "1B" : (ARB_ESTIMATES[pos] ? pos : "OF");
-
-  // Extension players — pull from CONTRACT_DATA
-  if (CONTRACT_DATA[name] && CONTRACT_DATA[name][year]) {
-    return { salary: CONTRACT_DATA[name][year], type: "ext", estimate: false };
-  }
-
-  // Min0 / minors — no salary on MLB roster
-  if (cLower === "min0") return { salary: 0, type: "minor", estimate: false };
-
-  // Contract number = years remaining (1, 2, 3, 4, 5, 6)
-  const yearsLeft = parseInt(contract);
-  if (!isNaN(yearsLeft)) {
-    const lastYear = CURRENT_YEAR + yearsLeft - 1;
-    if (year > lastYear) return { salary: 0, type: "ufa", estimate: false };
-    return { salary, type: "vet", estimate: false };
-  }
-
-  // Team options (2-TO, 3-TO) — treat like veteran years
-  if (cLower.includes("-to")) {
-    const toYears = parseInt(contract);
-    if (!isNaN(toYears)) {
-      const lastYear = CURRENT_YEAR + toYears - 1;
-      if (year > lastYear) return { salary: 0, type: "ufa", estimate: false };
-      return { salary, type: "to", estimate: false };
-    }
-  }
-
-  // Pre-arb minimums (Min1, Min2, Min3)
-  const minMatch = cLower.match(/^min(\d+)$/);
-  if (minMatch) {
-    const minYears = parseInt(minMatch[1]);
-    const lastMinYear = CURRENT_YEAR + minYears - 1;
-    if (year > lastMinYear) {
-      // Next would be Arb1
-      const arbYear = year - lastMinYear;
-      if (arbYear <= 3) {
-        const arbKey = "Arb" + arbYear;
-        const est = (ARB_ESTIMATES[posKey] || ARB_ESTIMATES["OF"])[arbKey] || 0;
-        return { salary: est, type: "arb", estimate: true };
-      }
-      return { salary: 0, type: "ufa", estimate: false };
-    }
-    return { salary: PRE_ARB_SALARY, type: "prearb", estimate: false };
-  }
-
-  // Super Two (S2)
-  if (cLower === "s2" || cLower.includes("super")) {
-    const est = (ARB_ESTIMATES[posKey] || ARB_ESTIMATES["OF"])["S2"] || 0;
-    return year === CURRENT_YEAR
-      ? { salary: est, type: "arb", estimate: true }
-      : { salary: 0, type: "ufa", estimate: false };
-  }
-
-  // Arb years (Arb1, Arb2, Arb3, Arb4)
-  const arbMatch = cLower.match(/^arb(\d+)$/);
-  if (arbMatch) {
-    const arbN = parseInt(arbMatch[1]);
-    // Current year is arbN, future years increment
-    for (let yr = CURRENT_YEAR; yr <= CURRENT_YEAR + (4 - arbN); yr++) {
-      const futureArbN = arbN + (yr - CURRENT_YEAR);
-      if (yr === year) {
-        if (futureArbN > 4) return { salary: 0, type: "ufa", estimate: false };
-        const arbKey = "Arb" + futureArbN;
-        const est = (ARB_ESTIMATES[posKey] || ARB_ESTIMATES["OF"])[arbKey] || salary;
-        // Current year may be manually entered, future years are estimates
-        const isEst = yr > CURRENT_YEAR || salary === 0;
-        return { salary: isEst ? est : salary, type: "arb", estimate: isEst };
-      }
-    }
-    return { salary: 0, type: "ufa", estimate: false };
-  }
-
-  // TBD
-  if (cLower === "tbd") return { salary: 0, type: "ufa", estimate: false };
-
-  // Ext without CONTRACT_DATA entry — show current salary
-  if (cLower.startsWith("ext")) {
-    return year === CURRENT_YEAR
-      ? { salary, type: "ext", estimate: false }
-      : { salary: 0, type: "ufa", estimate: false };
-  }
-
-  return { salary: 0, type: "ufa", estimate: false };
-}
-
-function fmtSalary(n) {
-  if (!n || n === 0) return "";
-  if (n >= 1000000) return "$" + (n/1000000).toFixed(2) + "M";
-  return "$" + (n/1000).toFixed(0) + "K";
-}
-
-function contractBadge(type, label, estimate) {
-  const classes = {
-    prearb: "ct-prearb", arb: estimate ? "ct-arb-est" : "ct-arb",
-    vet: "ct-vet", ext: "ct-ext", to: "ct-to",
-    ufa: "ct-ufa", minor: "ct-minor"
-  };
-  const labels = {
-    prearb: "PRE-ARB", arb: estimate ? "ARB~" : "ARB",
-    vet: label||"VET", ext: "EXT", to: "TO",
-    ufa: "UFA", minor: "MINOR"
-  };
-  const cls = classes[type] || "ct-blank";
-  const lbl = labels[type] || type.toUpperCase();
-  return `<span class="ct-badge ${cls}">${lbl}</span>`;
-}
-
-function buildTeamRosterPage(teamName) {
-  const allPlayers = UPCOMING_FA_LIVE.length > 0 ? [] : [];
-  // Pull from player salary sheet data
-  const teamPlayers = _rosterData ? _rosterData.filter(p => p.team === teamName) : [];
-
-  if (!teamPlayers.length) {
-    return `<div class="status-bar" style="color:var(--text2)">No roster data loaded yet. Make sure the Player Salary tab is published.</div>`;
-  }
-
-  const active  = teamPlayers.filter(p => !["Min0","min0"].includes((p.contract||"").toString()));
-  const minors  = teamPlayers.filter(p => ["Min0","min0"].includes((p.contract||"").toString()));
-
-  return `
-    <div class="roster-notice">
-      ⚠ Arbitration figures marked with <strong>ARB~</strong> are <em>estimates based on 2021–2025 median salaries by position</em>.
-      Actual figures are updated each January from Spotrac and entered manually.
-    </div>
-    ${buildRosterTable(teamName, active, "Active Roster")}
-    ${minors.length ? buildRosterTable(teamName, minors, "Minor League Roster") : ""}
-  `;
-}
-
-let _rosterSortState = {};
-
-function buildRosterTable(teamName, players, title) {
-  const sortKey = (_rosterSortState[title] || {}).col || "name";
-  const sortDir = (_rosterSortState[title] || {}).dir || "asc";
-  const isMinor = title.includes("Minor");
-
-  // Sort players
-  const sorted = [...players].sort((a, b) => {
-    let av, bv;
-    if (sortKey === "name")     { av = a.name;    bv = b.name;    return sortDir==="asc"?av.localeCompare(bv):bv.localeCompare(av); }
-    if (sortKey === "pos")      { av = a.position||""; bv = b.position||""; return sortDir==="asc"?av.localeCompare(bv):bv.localeCompare(av); }
-    if (sortKey === "salary")   { av = a.salary||0; bv = b.salary||0; }
-    else if (sortKey === "contract") { av = a.contract||""; bv = b.contract||""; return sortDir==="asc"?av.localeCompare(bv):bv.localeCompare(av); }
-    else {
-      const yr = parseInt(sortKey);
-      if (!isNaN(yr)) {
-        av = getPlayerSalary(a, yr).salary || 0;
-        bv = getPlayerSalary(b, yr).salary || 0;
-      } else {
-        av = 0; bv = 0;
-      }
-    }
-    return sortDir === "asc" ? av - bv : bv - av;
-  });
-
-  const safeTitle = title.replace(/\s+/g, "_");
-
-  function thSort(col, label) {
-    const isSorted = sortKey === col;
-    const cls = isSorted ? (sortDir === "desc" ? "sorted-desc" : "sorted-asc") : "";
-    return `<th class="${cls}" onclick="sortRosterTable(\'${teamName}\',\'${safeTitle}\',\'${col}\')">${label}</th>`;
-  }
-
-  // Year totals
-  const yearTotals = {};
-  DISPLAY_YEARS.forEach(yr => {
-    yearTotals[yr] = sorted.reduce((sum, p) => {
-      const s = getPlayerSalary(p, yr).salary || 0;
-      return sum + s;
-    }, 0);
-  });
-
-  const rows = sorted.map(p => {
-    const pos = p.position ? `<span class="pos-badge">${p.position.split(",")[0]}</span>` : "";
-    const yearCells = isMinor ? "" : DISPLAY_YEARS.map(yr => {
-      const result = getPlayerSalary(p, yr);
-      if (result.type === "ufa") return `<td class="roster-year-col"><span class="ct-badge ct-ufa">UFA</span></td>`;
-      if (result.type === "minor" || result.salary === 0) return `<td class="roster-year-col">—</td>`;
-      const badge = contractBadge(result.type, null, result.estimate);
-      return `<td class="roster-year-col">${fmtSalary(result.salary)} ${badge}</td>`;
-    }).join("");
-
-    const contractBadgeHtml = contractBadge(
-      ["Min0","min0"].includes((p.contract||"").toString()) ? "minor" :
-      (p.contract||"").toString().toLowerCase().startsWith("min") ? "prearb" :
-      (p.contract||"").toString().toLowerCase().startsWith("arb") ? "arb" :
-      (p.contract||"").toString().toLowerCase().startsWith("ext") ? "ext" :
-      (p.contract||"").toString().toLowerCase().includes("-to") ? "to" :
-      !isNaN(parseInt(p.contract)) ? "vet" : "ufa",
-      p.contract, false
-    );
-
-    return `<tr>
-      <td><span class="roster-player-name">${p.name}</span></td>
-      <td>${pos}</td>
-      <td>${fmtSalary(p.salary)}</td>
-      <td>${contractBadgeHtml}</td>
-      ${yearCells}
-    </tr>`;
-  }).join("");
-
-  const totalRow = isMinor ? "" : `<tr class="roster-totals-row">
-    <td colspan="4"><strong>Team Total</strong></td>
-    ${DISPLAY_YEARS.map(yr => `<td class="roster-year-col"><strong>${fmtSalary(yearTotals[yr])}</strong></td>`).join("")}
-  </tr>`;
-
-  const yearHeaders = isMinor ? "" : DISPLAY_YEARS.map(yr => thSort(yr.toString(), yr.toString())).join("");
-
-  return `
-    <div class="roster-wrap">
-      <div class="roster-section-title">${title} (${sorted.length} players)</div>
-      <div class="roster-table-wrap">
-        <table class="roster-table" id="roster-tbl-${safeTitle}">
-          <thead><tr>
-            ${thSort("name","Player")}
-            ${thSort("pos","Pos")}
-            ${thSort("salary","Current Salary")}
-            ${thSort("contract","Contract")}
-            ${yearHeaders}
-          </tr></thead>
-          <tbody>${rows}</tbody>
-          ${totalRow ? `<tfoot>${totalRow}</tfoot>` : ""}
-        </table>
-      </div>
-    </div>
-  `;
-}
-
-function sortRosterTable(teamName, tableTitle, col) {
-  const key = tableTitle;
-  const cur = _rosterSortState[key] || { col: "name", dir: "asc" };
-  _rosterSortState[key] = {
-    col,
-    dir: cur.col === col ? (cur.dir === "asc" ? "desc" : "asc") : (col === "name" || col === "pos" || col === "contract" ? "asc" : "desc")
-  };
-  document.getElementById("roster-content").innerHTML = buildTeamRosterPage(teamName);
-}
-
-let _rosterData = [];
-
-function parseRosterData(rows) {
-  const players = [];
-  if (rows.length < 2) return players;
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    if (!r[0] || !r[0].trim()) continue;
-    players.push({
-      name:     r[0].trim(),
-      salary:   parseMoney(r[1]),
-      team:     r[2] ? r[2].trim() : "",
-      contract: r[3] ? r[3].trim() : "",
-      position: r[4] ? r[4].trim() : "",
-    });
-  }
-  return players;
-}
-
-// ─────────────────────────────────────────────
-//  Main load
-// ─────────────────────────────────────────────
-async function loadData() {
-  const statusEl = document.getElementById("status");
-  const dashEl   = document.getElementById("dashboard");
-  statusEl.className = "status-bar";
-  statusEl.innerHTML = '<span class="spinner"></span> Loading live data from Google Sheets…';
-  statusEl.style.display = "block";
-  dashEl.style.display = "none";
-
-  try {
-    // Fetch both CSVs in parallel
-    const finCSV  = await fetchCSV(FINANCE_CSV);
-    const teams   = parseFinance(parseCSV(finCSV));
-    _teams = teams;
-
-    // Load history separately — fall back gracefully if it fails
-    try {
-      const histCSV = await fetchCSV(HISTORY_CSV);
-      HISTORY_FALLBACK = parseHistory(parseCSV(histCSV));
-    } catch(e) {
-      console.warn("History tab failed to load", e);
-    }
-
-    // Load player salary tab for upcoming free agents
-    try {
-      const playerCSV = await fetchCSV(PLAYER_SALARY_CSV);
-      UPCOMING_FA_LIVE = parsePlayerSalary(parseCSV(playerCSV));
-      console.log("Loaded " + UPCOMING_FA_LIVE.length + " upcoming free agents from sheet");
-    } catch(e) {
-      console.warn("Player salary tab failed to load", e);
-      UPCOMING_FA_LIVE = [];
-    }
-
-    // Load rules changes tabs
-    try {
-      const rulesCSV = await fetchCSV(RULES_CSV);
-      RULES_DATA.proposed = parseRulesChanges(parseCSV(rulesCSV));
-    } catch(e) {
-      console.warn("Rules changes tab failed to load", e);
-    }
-    try {
-      const formCSV = await fetchCSV(FORM_RESP_CSV);
-      FORM_RESP_DATA = parseFormResponses(parseCSV(formCSV));
-    } catch(e) {
-      console.warn("Form responses tab failed to load", e);
-    }
-
-    // Load player salary tab for roster data
-    try {
-      const playerCSV2 = await fetchCSV(PLAYER_SALARY_CSV);
-      _rosterData = parseRosterData(parseCSV(playerCSV2));
-      console.log("Roster data loaded:", _rosterData.length, "players");
-    } catch(e) {
-      console.warn("Roster data failed to load", e);
-    }
-
-    // Load contract extensions tab
-    try {
-      const contractCSV = await fetchCSV(CONTRACTS_CSV);
-      CONTRACT_DATA = parseContractExtensions(parseCSV(contractCSV));
-      console.log("Contract extensions loaded:", Object.keys(CONTRACT_DATA).length, "players");
-    } catch(e) {
-      console.warn("Contract extensions failed to load", e);
-    }
-
-    const payouts = parsePayouts(parseCSV(finCSV));
-    window._payouts = payouts;
-
-    // Populate each section independently
-    document.getElementById("home-content").innerHTML = buildLeagueHome(teams, payouts);
-    // Team financials home now shows ranking tables
-    showTeamFinancialHome();
-
-    document.getElementById("financials-content").innerHTML = `
-      <p class="sec-lbl">All 12 teams — click any card to expand</p>
-      <div class="detail-panel" id="detail-panel"></div>
-      <div class="teams-grid">${buildCards(teams)}</div>
-    `;
-
-    document.getElementById("fa-content").innerHTML = buildFASectionInner(teams);
-    document.getElementById("rules-content").innerHTML = buildRulesSectionInner();
-    document.getElementById("cba-content").innerHTML = buildCBAInner();
-
-    // Build roster submenu
-    buildRosterSubmenu(teams);
-    buildFinancialsSubmenu(teams);
-    showTeamFinancialHome();
-
-    statusEl.style.display = "none";
-    dashEl.style.display   = "block";
-    showSection("home");
-
-    const now = new Date();
-    document.getElementById("last-updated").textContent =
-      "Updated " + now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
-
-  } catch (err) {
-    statusEl.className = "status-bar error";
-    statusEl.innerHTML = "⚠ Could not load data from Google Sheets. Make sure the sheet is published to web.<br><small>" + err.message + "</small>";
-  }
-}
-
-loadData();
-</script>
-</body>
-</html>
