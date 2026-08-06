@@ -468,28 +468,32 @@ const FORM_RESP_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOU
 //  Tries each in sequence until one returns valid CSV
 // ─────────────────────────────────────────────
 async function fetchCSV(url) {
-  const strategies = [
-    () => fetch(url, { mode: "cors" }),
-    () => fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`),
-    () => fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`),
-    () => fetch(`https://thingproxy.freeboard.io/fetch/${url}`),
-    () => fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`),
+  const TIMEOUT_MS = 6000;
+  const proxies = [
+    url,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
   ];
-  for (const strategy of strategies) {
+
+  for (const proxyUrl of proxies) {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 10000);
-      const resp = await strategy();
+      const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+      const resp = await fetch(proxyUrl, { signal: controller.signal });
       clearTimeout(timer);
       if (resp && resp.ok) {
         const text = await resp.text();
-        if (text && text.length > 100 && !text.trim().startsWith("<")) return text;
+        if (text && text.length > 100 && !text.trim().startsWith("<")) {
+          console.log("fetchCSV success via:", proxyUrl.substring(0,60));
+          return text;
+        }
       }
     } catch(e) {
-      console.warn("Strategy failed, trying next...", e.message);
+      console.warn("fetchCSV proxy failed:", proxyUrl.substring(0,60), e.message);
     }
   }
-  throw new Error("All fetch strategies failed — check that your Google Sheet is published to web as CSV.");
+  throw new Error("All proxies failed. Check Google Sheet is published as CSV.");
 }
 
 // ─────────────────────────────────────────────
@@ -3321,6 +3325,76 @@ function toggleEl(id) {
   if (arr) arr.style.transform = isHidden ? "rotate(90deg)" : "";
 }
 
+
+// ─────────────────────────────────────────────
+//  Main load
+// ─────────────────────────────────────────────
+async function loadData() {
+  const statusEl = document.getElementById("status");
+  const dashEl   = document.getElementById("dashboard");
+  statusEl.className = "status-bar";
+  statusEl.innerHTML = '<span class="spinner"></span> Loading live data from Google Sheets…';
+  statusEl.style.display = "block";
+  dashEl.style.display = "none";
+
+  try {
+    const finCSV  = await fetchCSV(FINANCE_CSV);
+    const teams   = parseFinance(parseCSV(finCSV));
+    _teams = teams;
+
+    try {
+      const histCSV = await fetchCSV(HISTORY_CSV);
+      HISTORY_FALLBACK = parseHistory(parseCSV(histCSV));
+    } catch(e) { console.warn("History tab failed", e); }
+
+    try {
+      const playerCSV = await fetchCSV(PLAYER_SALARY_CSV);
+      UPCOMING_FA_LIVE = parsePlayerSalary(parseCSV(playerCSV));
+      _rosterData = parseRosterData(parseCSV(playerCSV));
+    } catch(e) { console.warn("Player salary tab failed", e); }
+
+    try {
+      const contractCSV = await fetchCSV(CONTRACTS_CSV);
+      CONTRACT_DATA = parseContractExtensions(parseCSV(contractCSV));
+    } catch(e) { console.warn("Contract extensions failed", e); }
+
+    try {
+      const rulesCSV = await fetchCSV(RULES_CSV);
+      RULES_DATA.proposed = parseRulesChanges(parseCSV(rulesCSV));
+    } catch(e) { console.warn("Rules changes tab failed", e); }
+
+    try {
+      const formCSV = await fetchCSV(FORM_RESP_CSV);
+      FORM_RESP_DATA = parseFormResponses(parseCSV(formCSV));
+    } catch(e) { console.warn("Form responses tab failed", e); }
+
+    const payouts = parsePayouts(parseCSV(finCSV));
+    window._payouts = payouts;
+
+    document.getElementById("home-content").innerHTML       = buildLeagueHome(teams, payouts);
+    document.getElementById("financials-content").innerHTML = buildFinancialsHome();
+    document.getElementById("fa-content").innerHTML         = buildFASectionInner(teams);
+    document.getElementById("rules-content").innerHTML      = buildRulesSectionInner();
+    document.getElementById("cba-content").innerHTML        = buildCBAInner();
+
+    buildFinancialsSubmenu(teams);
+    buildRosterSubmenu(teams);
+
+    statusEl.style.display = "none";
+    dashEl.style.display   = "block";
+    showSection("home");
+
+    const now = new Date();
+    document.getElementById("last-updated").textContent =
+      "Updated " + now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+
+  } catch (err) {
+    statusEl.className = "status-bar error";
+    statusEl.innerHTML = "⚠ Could not load data from Google Sheets. Make sure the sheet is published as CSV.<br><small>" + err.message + "</small><br><br><button onclick=\"loadData()\" style=\"margin-top:8px;padding:6px 16px;cursor:pointer;border-radius:6px;border:1px solid #ccc\">↻ Retry</button>";
+  }
+}
+
+loadData();
 
 </script>
 </body>
