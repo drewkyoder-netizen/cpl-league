@@ -3475,23 +3475,24 @@ function getPlayerSalary(player, year) {
   }
   if (cLower==="min0") return { salary:0, type:"minor", estimate:false };
 
+  // Check team options FIRST — parseInt("3-TO") = 3 which would wrongly match plain number
+  if (cLower.includes("-to")) {
+    const toMatch = contract.match(/^(\d+)-to$/i);
+    if (toMatch) {
+      const toYears = parseInt(toMatch[1]); // total contract years
+      const lastYear = CURRENT_YEAR + toYears - 1;
+      if (year > lastYear) return { salary:0, type:"ufa", estimate:false };
+      if (year === lastYear) return { salary, type:"to", estimate:false }; // option year = purple
+      return { salary, type:"vet", estimate:false }; // prior years = blue vet
+    }
+  }
+
+  // Plain number = years remaining on veteran contract
   const yearsLeft = parseInt(contract);
-  if (!isNaN(yearsLeft)) {
+  if (!isNaN(yearsLeft) && String(yearsLeft) === contract.trim()) {
     const lastYear = CURRENT_YEAR+yearsLeft-1;
     if (year>lastYear) return { salary:0, type:"ufa", estimate:false };
     return { salary, type:"vet", estimate:false };
-  }
-
-  if (cLower.includes("-to")) {
-    const toYears = parseInt(contract); // e.g. "3-TO" -> 3 total years, option on year 3
-    if (!isNaN(toYears)) {
-      const lastYear = CURRENT_YEAR + toYears - 1;
-      if (year > lastYear) return { salary:0, type:"ufa", estimate:false };
-      // Final year is the team option year
-      if (year === lastYear) return { salary, type:"to", estimate:false };
-      // Prior years are regular veteran years
-      return { salary, type:"vet", estimate:false };
-    }
   }
 
   const minMatch = cLower.match(/^min(\d+)$/);
@@ -3639,12 +3640,12 @@ function buildRosterTable(teamName, players, title) {
   const legend=isMinor?"":
     `<div class="roster-legend">
       <span class="ct-badge ct-vet">Veteran</span>
-      <span class="ct-badge ct-prearb">Pre-Arb $750K</span>
+      <span class="ct-badge ct-prearb">Pre-Arb</span>
       <span class="ct-badge ct-arb">Arbitration</span>
       <span class="ct-badge ct-ext">Extension</span>
       <span class="ct-badge ct-to">Team Option</span>
       <span class="ct-badge ct-ufa">UFA</span>
-      <span style="font-size:11px;color:var(--text3);align-self:center"><em>Italics</em> = non-guaranteed estimate</span>
+      <span style="font-size:11px;color:var(--text3);align-self:center"><em>Italics</em> = non-guaranteed</span>
     </div>`;
 
   const yearHeaders=isMinor?"":DISPLAY_YEARS.map(yr=>th(yr.toString(),yr.toString())).join("");
