@@ -3327,6 +3327,75 @@ function toggleEl(id) {
 
 
 // ─────────────────────────────────────────────
+//  CBA inner builder
+// ─────────────────────────────────────────────
+function buildCBAInner() {
+  const items = CBA_SECTIONS.map((s,i) => `
+    <div class="cba-item">
+      <button class="cba-trigger" onclick="toggleCBA(${i})" id="cba-btn-${i}">
+        <span class="cba-num">${s.num}</span>
+        <span class="cba-title">${s.title}</span>
+        <span class="cba-arrow">▶</span>
+      </button>
+      <div class="cba-body" id="cba-body-${i}">
+        <hr class="cba-divider">
+        ${s.content}
+      </div>
+    </div>
+  `).join("");
+  return `
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">Revised May 9, 2025 · Commissioner: Drew Yoder · Click any section to expand</p>
+    <div class="cba-toc">${items}</div>
+  `;
+}
+
+// ─────────────────────────────────────────────
+//  Parse Player Salary tab for roster
+// ─────────────────────────────────────────────
+function parseRosterData(rows) {
+  const players = [];
+  if (rows.length < 2) return players;
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[0] || !r[0].trim()) continue;
+    players.push({
+      name:     r[0].trim(),
+      salary:   parseMoney(r[1]),
+      team:     r[2] ? r[2].trim() : "",
+      contract: r[3] ? r[3].trim() : "",
+      position: r[4] ? r[4].trim() : "",
+    });
+  }
+  return players;
+}
+
+// ─────────────────────────────────────────────
+//  Parse Contract Extensions tab
+// ─────────────────────────────────────────────
+function parseContractExtensions(rows) {
+  const data = {};
+  if (rows.length < 2) return data;
+  const headers = rows[0].map(h => h.trim());
+  const yearCols = {};
+  headers.forEach((h, i) => {
+    const yr = parseInt(h);
+    if (yr >= 2025 && yr <= 2035) yearCols[yr] = i;
+  });
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const name = r[0] ? r[0].trim() : "";
+    if (!name) continue;
+    data[name] = { contract: r[2] ? r[2].trim() : "Ext" };
+    Object.entries(yearCols).forEach(([yr, col]) => {
+      const val = r[col] ? parseMoney(r[col]) : 0;
+      if (val > 0) data[name][parseInt(yr)] = val;
+    });
+  }
+  return data;
+}
+
+
+// ─────────────────────────────────────────────
 //  Main load
 // ─────────────────────────────────────────────
 async function loadData() {
