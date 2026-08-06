@@ -463,6 +463,7 @@ const FINANCE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBW
 const HISTORY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1547680400&single=true&output=csv";
 const PLAYER_SALARY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1073495754&single=true&output=csv";
 const CONTRACTS_CSV  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1365077649&single=true&output=csv";
+const DEAD_MONEY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1704259981&single=true&output=csv";
 const RULES_CSV     = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1416486223&single=true&output=csv";
 const FORM_RESP_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=809192862&single=true&output=csv";
 
@@ -3559,14 +3560,15 @@ function buildTeamRosterPage(teamName) {
   }
   const active = teamPlayers.filter(p=>!["min0","Min0"].includes((p.contract||"").toString()));
   const minors = teamPlayers.filter(p=>["min0","Min0"].includes((p.contract||"").toString()));
+  const deadPlayers = (DEAD_MONEY_DATA[teamName] || []);
   return `
-    <div class="roster-notice">⚠ <strong>ARB~</strong> figures are <em>estimates</em> based on 2021–2025 median salaries by position. Actual figures updated each January from Spotrac.</div>
-    ${buildRosterTable(teamName, active, "Active Roster")}
-    ${minors.length?buildRosterTable(teamName, minors, "Minor League Roster"):""}
+    <div class="roster-notice">⚠ Arbitration figures (<strong>Arb1/2/3</strong>) are placeholders updated each January from Spotrac. <em>Italics</em> = non-guaranteed.</div>
+    ${buildRosterTable(teamName, active, "Active Roster", deadPlayers)}
+    ${minors.length?buildRosterTable(teamName, minors, "Minor League Roster", []):""}
   `;
 }
 
-function buildRosterTable(teamName, players, title) {
+function buildRosterTable(teamName, players, title, deadPlayers) {
   const safeTitle_key = title.replace(/\s+/g,"_");
   const sortKey = (_rosterSortState[safeTitle_key]||{}).col||"name";
   const sortDir = (_rosterSortState[safeTitle_key]||{}).dir||"asc";
@@ -3655,6 +3657,18 @@ function buildRosterTable(teamName, players, title) {
     </tr>`;
   }).join("");
 
+  // Add dead money to year totals
+  const deadRows = (!isMinor && deadPlayers && deadPlayers.length) ? deadPlayers : [];
+  deadRows.forEach(dp => {
+    DISPLAY_YEARS.forEach(yr => {
+      const hit = dp.yearHits[yr] || 0;
+      if (hit > 0) {
+        yearTotals[yr] = (yearTotals[yr] || 0) + hit;
+        // Dead money is non-guaranteed
+      }
+    });
+  });
+
   const totalRow = isMinor?"":DISPLAY_YEARS.map(yr=>{
     const diff=yearTotals[yr]-yearGuaranteed[yr];
     return `<td><strong>${fmtSalary(yearTotals[yr])}</strong>${diff>0?`<br><span style="font-size:9px;color:var(--text3);font-style:italic">${fmtSalary(yearGuaranteed[yr])} gtd</span>`:""}</td>`;
@@ -3674,13 +3688,36 @@ function buildRosterTable(teamName, players, title) {
   const yearHeaders=isMinor?"":DISPLAY_YEARS.map(yr=>th(yr.toString(),yr.toString())).join("");
   const tableClass=isMinor?"roster-table minor-table":"roster-table";
 
+  // Dead money rows — always at bottom, italicized, not sortable
+  let deadRowsHtml = "";
+  if (!isMinor && deadRows.length) {
+    deadRowsHtml = deadRows.map(dp => {
+      const yearCells = DISPLAY_YEARS.map(yr => {
+        const hit = dp.yearHits[yr] || 0;
+        if (!hit) return `<td></td>`;
+        return `<td><span class="ct-badge ct-prearb" style="background:#6B728033"><em>${fmtSalary(hit)}</em></span></td>`;
+      }).join("");
+      return `<tr style="opacity:0.75">
+        <td><span class="roster-player-name" style="font-style:italic;color:var(--text2)">${dp.name}</span></td>
+        <td><span class="pos-badge" style="background:var(--bg3);color:var(--text3)">DM</span></td>
+        ${yearCells}
+      </tr>`;
+    }).join("");
+  }
+
+  const deadLabel = !isMinor && deadRows.length
+    ? `<div style="font-size:11px;color:var(--text3);margin-bottom:4px;padding-left:2px">
+        <em>Dead money players shown in gray italics — included in team totals</em>
+      </div>` : "";
+
   return `<div class="roster-wrap">
-    <div class="roster-section-title">${title} (${sorted.length} players)</div>
+    <div class="roster-section-title">${title} (${sorted.length} players${deadRows.length?" + "+deadRows.length+" dead money":""})</div>
     ${legend}
+    ${deadLabel}
     <div class="roster-table-wrap">
       <table class="${tableClass}">
         <thead><tr>${th("name","Player","text-align:left")}${th("pos","Pos")}${yearHeaders}</tr></thead>
-        <tbody>${rows}</tbody>
+        <tbody>${rows}${deadRowsHtml}</tbody>
         ${!isMinor?`<tfoot><tr class="roster-totals-row"><td><strong>Total Payroll</strong></td><td></td>${totalRow}</tr></tfoot>`:""}
       </table>
     </div>
@@ -3746,6 +3783,46 @@ function parseContractExtensions(rows) {
 
 
 // ─────────────────────────────────────────────
+//  Dead Money
+// ─────────────────────────────────────────────
+let DEAD_MONEY_DATA = {}; // team -> [{ name, yearHits: {2026:x, 2027:x, ...} }]
+
+function parseDeadMoney(rows) {
+  const data = {};
+  if (rows.length < 2) return data;
+  // Columns: Player, Salary, Yrs Remain, Pre New League Year, Team, 2026 Cap Hit, Future Cap Hit Total, Year Expiring
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[0] || !r[0].trim()) continue;
+    const name        = r[0].trim();
+    const team        = r[4] ? r[4].trim() : "";
+    const hit2026     = parseMoney(r[5]);   // current year cap hit (already adjusted)
+    const futureTotal = parseMoney(r[6]);   // total future dead money
+    const yrsRemain   = parseInt(r[2]) || 1;
+    const yearExpiring = parseInt(r[7]) || CURRENT_YEAR;
+
+    // Build year-by-year hits
+    // 2026 = hit2026 (from sheet)
+    // Future years: spread futureTotal evenly across remaining years (yearExpiring - 2026)
+    const yearHits = {};
+    yearHits[CURRENT_YEAR] = hit2026;
+
+    const futureYears = yearExpiring - CURRENT_YEAR;
+    if (futureYears > 0 && futureTotal > 0) {
+      const perYear = futureTotal / futureYears;
+      for (let yr = CURRENT_YEAR + 1; yr <= yearExpiring; yr++) {
+        yearHits[yr] = perYear;
+      }
+    }
+
+    if (!data[team]) data[team] = [];
+    data[team].push({ name, yearHits });
+  }
+  return data;
+}
+
+
+// ─────────────────────────────────────────────
 //  Main load
 // ─────────────────────────────────────────────
 async function loadData() {
@@ -3776,6 +3853,11 @@ async function loadData() {
       const contractCSV = await fetchCSV(CONTRACTS_CSV);
       CONTRACT_DATA = parseContractExtensions(parseCSV(contractCSV));
     } catch(e) { console.warn("Contract extensions failed", e); }
+
+    try {
+      const deadCSV = await fetchCSV(DEAD_MONEY_CSV);
+      DEAD_MONEY_DATA = parseDeadMoney(parseCSV(deadCSV));
+    } catch(e) { console.warn("Dead money tab failed", e); }
 
     try {
       const rulesCSV = await fetchCSV(RULES_CSV);
