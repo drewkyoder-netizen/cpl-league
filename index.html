@@ -2943,9 +2943,14 @@ function toggleFinancialsMenu() {
   const arrow   = document.getElementById("financials-arrow");
   if (submenu) submenu.classList.toggle("open", financialsMenuOpen);
   if (arrow)   arrow.classList.toggle("open", financialsMenuOpen);
-  showSection("financials");
-  showTeamFinancialHome();
-  document.getElementById("nav-financials").classList.add("active");
+  document.getElementById("nav-financials").classList.toggle("active", financialsMenuOpen);
+  const isMobile = window.innerWidth <= 700;
+  if (financialsMenuOpen) {
+    showSection("financials");
+    showTeamFinancialHome();
+    // On mobile, close sidebar after showing content so they can see the table
+    if (isMobile) closeMobileMenu();
+  }
 }
 
 function showTeamFinancialHome() {
@@ -3194,18 +3199,29 @@ function toggleRosterMenu() {
   const arrow   = document.getElementById("roster-arrow");
   submenu.classList.toggle("open", rosterMenuOpen);
   arrow.classList.toggle("open", rosterMenuOpen);
-  if (rosterMenuOpen) showSection("roster");
-  document.getElementById("nav-roster").classList.add("active");
+  document.getElementById("nav-roster").classList.toggle("active", rosterMenuOpen);
+  // On mobile: just open the menu, don't navigate to blank roster page
+  // On desktop: navigate to roster section so submenu is visible alongside content
+  const isMobile = window.innerWidth <= 700;
+  if (rosterMenuOpen && !isMobile) showSection("roster");
+  // Show a prompt on the roster section if no team is selected yet
+  if (rosterMenuOpen) {
+    const rc = document.getElementById("roster-content");
+    if (rc && !rc.innerHTML.trim()) {
+      rc.innerHTML = `<div class="status-bar" style="color:var(--text2)">👈 Select a team from the sidebar to view their roster.</div>`;
+    }
+  }
 }
 
 function showTeamRoster(teamName) {
   document.getElementById("roster-page-title").textContent = "📋 " + teamName;
   document.getElementById("roster-content").innerHTML = buildTeamRosterPage(teamName);
   showSection("roster");
-  // Mark sub-item active
   document.querySelectorAll(".nav-item.sub-item:not(.fin-sub-item)").forEach(b => b.classList.remove("active"));
   const teamBtn = document.getElementById("roster-sub-" + teamName.replace(/[^a-z0-9]/gi,"_"));
   if (teamBtn) teamBtn.classList.add("active");
+  // Close sidebar on mobile after selecting a team
+  if (window.innerWidth <= 700) closeMobileMenu();
 }
 
 function buildRosterSubmenu(teams) {
