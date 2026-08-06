@@ -2989,20 +2989,20 @@ function buildFinancialsHome() {
   const fmtD = v => "$"+Math.abs(v).toFixed(2);
 
   const cols = [
-    { key:"name",         label:"Team",            align:"left"  },
-    { key:"capHit",       label:"Total Cap Hit",    align:"right" },
-    { key:"payroll",      label:"Active Payroll",   align:"right" },
-    { key:"tax",          label:"Payroll Tax",      align:"right" },
-    { key:"dead",         label:"Dead Money",       align:"right" },
-    { key:"milb",         label:"MiLB Pool",        align:"right" },
-    { key:"netDues",      label:"Net Dues",         align:"right" },
-    { key:"guaranteed27", label:"2027 Guarantee",   align:"right" },
+    { key:"name",     label:"Team",            align:"left"  },
+    { key:"capSpace", label:"Cap Space",        align:"right" },
+    { key:"capHit",   label:"Total Cap Hit",    align:"right" },
+    { key:"payroll",  label:"Active Payroll",   align:"right" },
+    { key:"tax",      label:"Payroll Tax",      align:"right" },
+    { key:"dead",     label:"Dead Money",       align:"right" },
+    { key:"milb",     label:"MiLB Pool",        align:"right" },
+    { key:"netDues",  label:"Net Dues",         align:"right" },
   ];
 
   function getVal(t, key) {
-    return { name:t.name, capHit:t.payrollReal+t.deadReal, payroll:t.payrollReal,
-      tax:t.taxReal, dead:t.deadReal, milb:t.mlBonusReal,
-      netDues:t.finalDues, guaranteed27:t.guaranteed2027 }[key];
+    const capHit = t.payrollReal+t.deadReal;
+    return { name:t.name, capSpace:CAP-capHit, capHit, payroll:t.payrollReal,
+      tax:t.taxReal, dead:t.deadReal, milb:t.mlBonusReal, netDues:t.finalDues }[key];
   }
 
   const sorted = [...teamArr].sort((a,b) => {
@@ -3024,18 +3024,20 @@ function buildFinancialsHome() {
     const capColor = capPct>100?"var(--danger)":capPct>96?"var(--warn)":"var(--good)";
     const dueColor = t.finalDues>=0?"var(--good)":"var(--danger)";
     const taxColor = t.taxDues>240?"var(--warn)":"var(--text)";
+    const space = CAP - capHit;
+    const spaceColor = space < 0 ? "var(--danger)" : space < 10000000 ? "var(--warn)" : "var(--good)";
     return `<tr onclick="showTeamFinancials(\'${t.name.replace(/'/g,"\\'")}\');showSection(\'financials\')" style="cursor:pointer">
       <td><div class="fin-team-cell">
         <img src="${LOGO_BASE}${(TEAM_META[t.name]||{}).logo||""}" width="28" height="28" style="border-radius:14px;object-fit:contain;background:#fff;flex-shrink:0">
         <span style="font-weight:500">${t.name}</span>
       </div></td>
+      <td style="color:${spaceColor};font-weight:500">${space>=0?fmtM(space):"-"+fmtM(Math.abs(space))}</td>
       <td style="color:${capColor};font-weight:500">${fmtM(capHit)}</td>
       <td>${fmtM(t.payrollReal)}</td>
       <td style="color:${taxColor}">${fmtM(t.taxReal)}</td>
       <td style="color:${t.deadReal>0?"var(--warn)":"var(--text)"}">${t.deadReal>0?fmtM(t.deadReal):"—"}</td>
       <td>${fmtM(t.mlBonusReal)}</td>
       <td style="color:${dueColor};font-weight:500">${t.finalDues>=0?"+ ":"- "}${fmtD(t.finalDues)}</td>
-      <td>${fmtM(t.guaranteed2027)}</td>
     </tr>`;
   }).join("");
 
@@ -3481,11 +3483,14 @@ function getPlayerSalary(player, year) {
   }
 
   if (cLower.includes("-to")) {
-    const toYears = parseInt(contract);
+    const toYears = parseInt(contract); // e.g. "3-TO" -> 3 total years, option on year 3
     if (!isNaN(toYears)) {
-      const lastYear = CURRENT_YEAR+toYears-1;
-      if (year>lastYear) return { salary:0, type:"ufa", estimate:false };
-      return { salary, type:"to", estimate:false };
+      const lastYear = CURRENT_YEAR + toYears - 1;
+      if (year > lastYear) return { salary:0, type:"ufa", estimate:false };
+      // Final year is the team option year
+      if (year === lastYear) return { salary, type:"to", estimate:false };
+      // Prior years are regular veteran years
+      return { salary, type:"vet", estimate:false };
     }
   }
 
@@ -3500,8 +3505,7 @@ function getPlayerSalary(player, year) {
     if (year > lastMinYear) {
       const arbYear = year - lastMinYear;
       if (arbYear <= 3) {
-        const est = (ARB_ESTIMATES[posKey]||ARB_ESTIMATES["OF"])["Arb"+arbYear]||0;
-        return { salary:est, type:"arb", estimate:true };
+        return { salary:0, type:"arb", estimate:false, arbLabel:"Arb"+arbYear };
       }
       return { salary:0, type:"ufa", estimate:false };
     }
@@ -3513,16 +3517,14 @@ function getPlayerSalary(player, year) {
     const arbN = parseInt(arbMatch[1]);
     const futureArbN = arbN+(year-CURRENT_YEAR);
     if (futureArbN>4) return { salary:0, type:"ufa", estimate:false };
-    const arbKey = "Arb"+futureArbN;
-    const est = (ARB_ESTIMATES[posKey]||ARB_ESTIMATES["OF"])[arbKey]||salary;
-    const isEst = year>CURRENT_YEAR||salary===0;
-    return { salary:isEst?est:salary, type:"arb", estimate:isEst };
+    // Current year: use actual salary from sheet; future years: just show label
+    if (year === CURRENT_YEAR) return { salary, type:"arb", estimate:false, arbLabel:"Arb"+futureArbN };
+    return { salary:0, type:"arb", estimate:false, arbLabel:"Arb"+futureArbN };
   }
 
   if (cLower==="tbd") return { salary:0, type:"ufa", estimate:false };
   if (cLower==="s2"||cLower.includes("super")) {
-    const est = (ARB_ESTIMATES[posKey]||ARB_ESTIMATES["OF"])["S2"]||0;
-    return year===CURRENT_YEAR?{ salary:est, type:"arb", estimate:true }:{ salary:0, type:"ufa", estimate:false };
+    return year===CURRENT_YEAR?{ salary, type:"arb", estimate:false, arbLabel:"S2" }:{ salary:0, type:"ufa", estimate:false };
   }
   if (cLower.startsWith("ext")) {
     return year===CURRENT_YEAR?{ salary, type:"ext", estimate:false }:{ salary:0, type:"ufa", estimate:false };
@@ -3548,8 +3550,9 @@ function buildTeamRosterPage(teamName) {
 }
 
 function buildRosterTable(teamName, players, title) {
-  const sortKey = (_rosterSortState[title]||{}).col||"name";
-  const sortDir = (_rosterSortState[title]||{}).dir||"asc";
+  const safeTitle_key = title.replace(/\s+/g,"_");
+  const sortKey = (_rosterSortState[safeTitle_key]||{}).col||"name";
+  const sortDir = (_rosterSortState[safeTitle_key]||{}).dir||"asc";
   const isMinor = title.includes("Minor");
   const POS_ORDER = ["C","1B","2B","SS","3B","OF","UT","SP","RP"];
 
@@ -3606,11 +3609,19 @@ function buildRosterTable(teamName, players, title) {
     const ufy=firstUFAYear(p);
     const yearCells = isMinor?"":DISPLAY_YEARS.map(yr=>{
       const r=getPlayerSalary(p,yr);
-      if (r.type==="minor"||r.salary===0) {
-        return yr===ufy?`<td><span class="ct-badge ct-ufa">UFA</span></td>`:`<td></td>`;
-      }
+      if (r.type==="minor") return `<td></td>`;
       if (r.type==="ufa") return yr===ufy?`<td><span class="ct-badge ct-ufa">UFA</span></td>`:`<td></td>`;
-      const sal=r.estimate?`<em>${fmtSalary(r.salary)}</em>`:fmtSalary(r.salary);
+      // Arb years: show label (Arb1/Arb2/Arb3) with salary if current year
+      if (r.type==="arb") {
+        const lbl = r.arbLabel || "Arb";
+        const salPart = r.salary>0 ? " "+fmtSalary(r.salary) : "";
+        return `<td><span class="ct-badge ct-arb">${lbl}${salPart}</span></td>`;
+      }
+      // Pre-arb: show $750K
+      if (r.type==="prearb") return `<td><span class="ct-badge ct-prearb">${fmtSalary(PRE_ARB_SALARY)}</span></td>`;
+      // All others: show salary
+      if (r.salary===0) return yr===ufy?`<td><span class="ct-badge ct-ufa">UFA</span></td>`:`<td></td>`;
+      const sal = r.estimate?`<em>${fmtSalary(r.salary)}</em>`:fmtSalary(r.salary);
       return `<td><span class="ct-badge ${ctCls[r.type]||"ct-vet"}">${sal}</span></td>`;
     }).join("");
     return `<tr>
@@ -3655,9 +3666,12 @@ function buildRosterTable(teamName, players, title) {
 function sortRosterTable(teamName, tableTitle, col) {
   const cur = _rosterSortState[tableTitle]||{col:"name",dir:"asc"};
   _rosterSortState[tableTitle] = {
-    col, dir: cur.col===col?(cur.dir==="asc"?"desc":"asc"):(col==="name"||col==="pos"?"asc":"desc")
+    col,
+    dir: cur.col===col ? (cur.dir==="asc"?"desc":"asc") : (col==="name"||col==="pos"?"asc":"desc")
   };
-  document.getElementById("roster-content").innerHTML = buildTeamRosterPage(teamName);
+  // Re-render the roster page keeping current team
+  const el = document.getElementById("roster-content");
+  if (el) el.innerHTML = buildTeamRosterPage(teamName);
 }
 
 
