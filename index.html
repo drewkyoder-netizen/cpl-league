@@ -781,7 +781,7 @@ function buildHistTable() {
 
   const cols = [
     { key:"name",        label:"Team",               fmt: (t,h) => "", special:"team" },
-    { key:"moneyPL",     label:"All-time Money +/-",  fmt: (t,h) => (h.moneyPL>=0?"+ $":"- $")+Math.abs(h.moneyPL).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}), cls: (t,h) => h.moneyPL>=0?"money-pos":"money-neg" },
+    { key:"moneyPL",     label:"All-time Money +/-",  fmt: (t,h) => `<span style="color:${h.moneyPL>=0?"var(--good)":"var(--danger)"};font-weight:500">${h.moneyPL>=0?"+ $":"- $"}${Math.abs(h.moneyPL).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`, cls: ()=>"" },
     { key:"wins",        label:"W",                   fmt: (t,h) => h.wins||0 },
     { key:"losses",      label:"L",                   fmt: (t,h) => h.losses||0 },
     { key:"winPct",      label:"Win %",               fmt: (t,h) => ((h.winPct||0)*100).toFixed(1)+"%" },
@@ -3618,8 +3618,11 @@ function buildRosterTable(teamName, players, title) {
         const salPart = r.salary>0 ? " "+fmtSalary(r.salary) : "";
         return `<td><span class="ct-badge ct-arb">${lbl}${salPart}</span></td>`;
       }
-      // Pre-arb: show $750K
-      if (r.type==="prearb") return `<td><span class="ct-badge ct-prearb">${fmtSalary(PRE_ARB_SALARY)}</span></td>`;
+      // Pre-arb: current year guaranteed, future years non-guaranteed (italics)
+      if (r.type==="prearb") {
+        const sal = yr===CURRENT_YEAR ? fmtSalary(PRE_ARB_SALARY) : `<em>${fmtSalary(PRE_ARB_SALARY)}</em>`;
+        return `<td><span class="ct-badge ct-prearb">${sal}</span></td>`;
+      }
       // All others: show salary
       if (r.salary===0) return yr===ufy?`<td><span class="ct-badge ct-ufa">UFA</span></td>`:`<td></td>`;
       const sal = r.estimate?`<em>${fmtSalary(r.salary)}</em>`:fmtSalary(r.salary);
