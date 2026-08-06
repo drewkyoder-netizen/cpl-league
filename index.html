@@ -3588,9 +3588,22 @@ function buildRosterTable(teamName, players, title, deadPlayers) {
     }
     const yr=parseInt(sortKey);
     if (!isNaN(yr)) {
-      const av=getPlayerSalary(a,yr).salary||0;
-      const bv=getPlayerSalary(b,yr).salary||0;
-      return sortDir==="asc"?av-bv:bv-av;
+      function sortVal(p) {
+        const r = getPlayerSalary(p, yr);
+        if (r.type === "ufa" || (r.salary === 0 && r.type !== "arb")) return -2; // UFA = lowest
+        if (r.type === "arb" && r.salary === 0) return -1; // Arb label only = middle
+        return r.salary || 0; // real salary = highest
+      }
+      const av = sortVal(a);
+      const bv = sortVal(b);
+      // desc: real salaries first, then arb labels, then UFA
+      // asc: UFA last, arb labels second-to-last, real salaries ascending
+      if (sortDir === "desc") return bv - av;
+      // asc: put UFA(-2) and arb(-1) at bottom, real salaries ascending
+      if (av < 0 && bv < 0) return av - bv; // both non-salary: sort by sentinel
+      if (av < 0) return 1;  // a is non-salary, push to bottom
+      if (bv < 0) return -1; // b is non-salary, push to bottom
+      return av - bv;
     }
     return 0;
   });
