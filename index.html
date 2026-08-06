@@ -3002,13 +3002,18 @@ function buildFinancialsHome() {
     { key:"tax",      label:"Payroll Tax",      align:"right" },
     { key:"dead",     label:"Dead Money",       align:"right" },
     { key:"milb",     label:"MiLB Pool",        align:"right" },
+    { key:"farmRank", label:"Farm Rank",         align:"center" },
     { key:"netDues",  label:"Net Dues",         align:"right" },
   ];
 
   function getVal(t, key) {
     const capHit = t.payrollReal+t.deadReal;
+    const fr = FARM_RANKINGS[t.name];
+    // farmRank sorts: rank 1 = best, so invert for desc sort (higher = better)
     return { name:t.name, capSpace:CAP-capHit, capHit, payroll:t.payrollReal,
-      tax:t.taxReal, dead:t.deadReal, milb:t.mlBonusReal, netDues:t.finalDues }[key];
+      tax:t.taxReal, dead:t.deadReal, milb:t.mlBonusReal,
+      farmRank: fr ? (13 - fr.rank) : 0, // invert so #1 sorts to top in desc
+      netDues:t.finalDues }[key];
   }
 
   const sorted = [...teamArr].sort((a,b) => {
@@ -3043,6 +3048,7 @@ function buildFinancialsHome() {
       <td style="color:${taxColor}">${fmtM(t.taxReal)}</td>
       <td style="color:${t.deadReal>0?"var(--warn)":"var(--text)"}">${t.deadReal>0?fmtM(t.deadReal):"—"}</td>
       <td>${fmtM(t.mlBonusReal)}</td>
+      <td style="text-align:center">${(()=>{const fr=FARM_RANKINGS[t.name];return fr?`<span style="font-weight:600;color:#7C3AED">#${fr.rank}</span>`:`<span style="color:var(--text3)">—</span>`;})()}</td>
       <td style="color:${dueColor};font-weight:500">${t.finalDues>=0?"+ ":"- "}${fmtD(t.finalDues)}</td>
     </tr>`;
   }).join("");
@@ -3561,14 +3567,18 @@ function buildTeamRosterPage(teamName) {
   const active = teamPlayers.filter(p=>!["min0","Min0"].includes((p.contract||"").toString()));
   const minors = teamPlayers.filter(p=>["min0","Min0"].includes((p.contract||"").toString()));
   const deadPlayers = (DEAD_MONEY_DATA[teamName] || []);
+  const farmInfo = FARM_RANKINGS[teamName];
+  const farmBadge = farmInfo
+    ? `<span style="margin-left:8px;font-size:12px;font-weight:600;color:#7C3AED">Farm #${farmInfo.rank}</span>`
+    : "";
   return `
     <div class="roster-notice">⚠ Arbitration figures (<strong>Arb1/2/3</strong>) are placeholders updated each January from Spotrac. <em>Italics</em> = non-guaranteed.</div>
     ${buildRosterTable(teamName, active, "Active Roster", deadPlayers)}
-    ${minors.length?buildRosterTable(teamName, minors, "Minor League Roster", []):""}
+    ${minors.length?buildRosterTable(teamName, minors, "Minor League Roster", [], farmBadge):""}
   `;
 }
 
-function buildRosterTable(teamName, players, title, deadPlayers) {
+function buildRosterTable(teamName, players, title, deadPlayers, farmBadge) {
   const safeTitle_key = title.replace(/\s+/g,"_");
   const sortKey = (_rosterSortState[safeTitle_key]||{}).col||"name";
   const sortDir = (_rosterSortState[safeTitle_key]||{}).dir||"asc";
@@ -3643,6 +3653,16 @@ function buildRosterTable(teamName, players, title, deadPlayers) {
 
   const rows = sorted.map(p=>{
     const ufy=firstUFAYear(p);
+    // Ranking cells for minor leaguers
+    function rankCell(val) {
+      if (!val || val === "null") return `<td style="text-align:center;color:var(--text3);font-size:11px">—</td>`;
+      const upper = val.toString().toUpperCase();
+      if (upper === "NR") return `<td style="text-align:center;font-size:11px;color:var(--text3);font-style:italic">NR</td>`;
+      return `<td style="text-align:center;font-size:11px;font-weight:600;color:var(--text)">${val}</td>`;
+    }
+    const rankCells = isMinor
+      ? rankCell(p.ba)+rankCell(p.mlb)+rankCell(p.fg)
+      : "";
     const yearCells = isMinor?"":DISPLAY_YEARS.map(yr=>{
       const r=getPlayerSalary(p,yr);
       if (r.type==="minor") return `<td></td>`;
@@ -3666,7 +3686,7 @@ function buildRosterTable(teamName, players, title, deadPlayers) {
     return `<tr>
       <td><span class="roster-player-name">${p.name}</span></td>
       <td>${posBadge(p.position)}</td>
-      ${yearCells}
+      ${rankCells}${yearCells}
     </tr>`;
   }).join("");
 
@@ -3698,7 +3718,10 @@ function buildRosterTable(teamName, players, title, deadPlayers) {
       <span style="font-size:11px;color:var(--text3);align-self:center"><em>Italics</em> = non-guaranteed</span>
     </div>`;
 
-  const yearHeaders=isMinor?"":DISPLAY_YEARS.map(yr=>th(yr.toString(),yr.toString())).join("");
+  const rankHeaders = isMinor
+    ? `<th style="text-align:center;font-size:10px">BA</th><th style="text-align:center;font-size:10px">MLB</th><th style="text-align:center;font-size:10px">FG</th>`
+    : "";
+  const yearHeaders = isMinor?"":DISPLAY_YEARS.map(yr=>th(yr.toString(),yr.toString())).join("");
   const tableClass=isMinor?"roster-table minor-table":"roster-table";
 
   // Dead money rows — always at bottom, italicized, not sortable
@@ -3724,12 +3747,15 @@ function buildRosterTable(teamName, players, title, deadPlayers) {
       </div>` : "";
 
   return `<div class="roster-wrap">
-    <div class="roster-section-title">${title} (${sorted.length} players${deadRows.length?" + "+deadRows.length+" dead money":""})</div>
+    <div class="roster-section-title" style="display:flex;align-items:center">
+      ${title} (${sorted.length} players${deadRows.length?" + "+deadRows.length+" dead money":""})
+      ${farmBadge||""}
+    </div>
     ${legend}
     ${deadLabel}
     <div class="roster-table-wrap">
       <table class="${tableClass}">
-        <thead><tr>${th("name","Player","text-align:left")}${th("pos","Pos")}${yearHeaders}</tr></thead>
+        <thead><tr>${th("name","Player","text-align:left")}${th("pos","Pos")}${rankHeaders}${yearHeaders}</tr></thead>
         <tbody>${rows}${deadRowsHtml}</tbody>
         ${!isMinor?`<tfoot><tr class="roster-totals-row"><td><strong>Total Payroll</strong></td><td></td>${totalRow}</tr></tfoot>`:""}
       </table>
@@ -3755,18 +3781,73 @@ function sortRosterTable(teamName, tableTitle, col) {
 function parseRosterData(rows) {
   const players = [];
   if (rows.length < 2) return players;
+  const headers = rows[0].map(h => (h||"").trim().toLowerCase());
+  const baCol   = headers.indexOf("baseball america");
+  const mlbCol  = headers.indexOf("mlb.com");
+  const fgCol   = headers.indexOf("fangraphs");
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r[0] || !r[0].trim()) continue;
+    const getRank = col => {
+      if (col < 0 || !r[col]) return null;
+      const v = r[col].trim();
+      return (v === "" || v === "nan") ? null : v; // keep "NR" and numbers as strings
+    };
     players.push({
       name:     r[0].trim(),
       salary:   parseMoney(r[1]),
       team:     r[2] ? r[2].trim() : "",
       contract: r[3] ? r[3].trim() : "",
       position: r[4] ? r[4].trim() : "",
+      ba:       getRank(baCol),
+      mlb:      getRank(mlbCol),
+      fg:       getRank(fgCol),
     });
   }
   return players;
+}
+
+// Compute composite prospect score for one player
+function prospectScore(p) {
+  const RANKING_KEYS = ["ba","mlb","fg"];
+  let scores = [], anyRanked = false;
+  RANKING_KEYS.forEach(k => {
+    const v = p[k];
+    if (!v || v === "null") { scores.push(0); return; }
+    if (v.toString().toUpperCase() === "NR") { scores.push(0.5); return; }
+    const n = parseInt(v);
+    if (!isNaN(n)) { scores.push(101 - n); anyRanked = true; return; }
+    scores.push(0);
+  });
+  if (!anyRanked && scores.every(s => s === 0)) return 0;
+  return scores.reduce((a,b)=>a+b,0) / scores.length;
+}
+
+// Compute farm system score for a team's prospect list
+function farmScore(prospects) {
+  const total = prospects.reduce((sum, p) => sum + prospectScore(p), 0);
+  const depth = (Math.min(prospects.length, 25) / 25) * 5;
+  return total + depth;
+}
+
+// Build farm rankings for all teams — returns { teamName: { score, rank } }
+let FARM_RANKINGS = {};
+function computeFarmRankings(rosterData) {
+  const teamProspects = {};
+  rosterData.forEach(p => {
+    const c = (p.contract||"").toString().toLowerCase();
+    // Include Min0, Min1, Min2, Min3 prospects
+    if (!c.startsWith("min")) return;
+    if (!teamProspects[p.team]) teamProspects[p.team] = [];
+    teamProspects[p.team].push(p);
+  });
+  const scores = Object.entries(teamProspects).map(([team, ps]) => ({
+    team, score: farmScore(ps)
+  })).sort((a,b) => b.score - a.score);
+  FARM_RANKINGS = {};
+  scores.forEach((t,i) => {
+    FARM_RANKINGS[t.team] = { score: t.score, rank: i+1 };
+  });
 }
 
 // ─────────────────────────────────────────────
@@ -3860,6 +3941,7 @@ async function loadData() {
       const playerCSV = await fetchCSV(PLAYER_SALARY_CSV);
       UPCOMING_FA_LIVE = parsePlayerSalary(parseCSV(playerCSV));
       _rosterData = parseRosterData(parseCSV(playerCSV));
+      computeFarmRankings(_rosterData);
     } catch(e) { console.warn("Player salary tab failed", e); }
 
     try {
