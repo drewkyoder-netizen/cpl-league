@@ -3574,7 +3574,11 @@ function buildRosterTable(teamName, players, title) {
   const POS_ORDER = ["C","1B","2B","SS","3B","OF","UT","SP","RP"];
 
   const sorted = [...players].sort((a,b)=>{
-    if (sortKey==="name") return sortDir==="asc"?a.name.localeCompare(b.name):b.name.localeCompare(a.name);
+    if (sortKey==="name") {
+      const lastA = a.name.trim().split(" ").pop();
+      const lastB = b.name.trim().split(" ").pop();
+      return sortDir==="asc"?lastA.localeCompare(lastB):lastB.localeCompare(lastA);
+    }
     if (sortKey==="pos") {
       const ai=POS_ORDER.indexOf((a.position||"").split(",")[0]);
       const bi=POS_ORDER.indexOf((b.position||"").split(",")[0]);
