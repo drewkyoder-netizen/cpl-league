@@ -174,6 +174,9 @@
   .fa-footnote { font-size: 11px; color: var(--text3); margin-top: 6px; }
 
   /* ── FA Sort buttons ── */
+  .fa-team-filter { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px; cursor: pointer; transition: outline .15s; }
+  .fa-team-filter:hover { background: var(--bg2); }
+  .fa-team-filter.active { outline: 2px solid #378ADD; }
   .fa-sort-btn { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); white-space: nowrap; }
   .fa-sort-btn:hover { background: var(--bg2); }
   .fa-sort-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
@@ -513,7 +516,7 @@ const TEAM_META = {
   "San Diego Padres":      { abbr:"SD",  color1:"#2F241D", color2:"#FFC425", text:"#FFC425", owner:"Bert Ortiz",      phone:"925.918.0140", logo:"sd.png"  },
   "Baltimore Orioles":     { abbr:"BAL", color1:"#DF4601", color2:"#000000", text:"#fff",    owner:"David Cortez",    phone:"510.508.5286", logo:"bal.png" },
   "San Francisco Giants":  { abbr:"SF",  color1:"#FD5A1E", color2:"#27251F", text:"#fff",    owner:"Mac Osborn",      phone:"650.862.0740", logo:"sf.png"  },
-  "Cincinnati Reds":       { abbr:"CIN", color1:"#C6011F", color2:"#000000", text:"#fff",    owner:"Sean Wasserman",  phone:"408.348.8256" },
+  "Cincinnati Reds":       { abbr:"CIN", color1:"#C6011F", color2:"#000000", text:"#fff",    owner:"Sean Wasserman",  phone:"408.348.8256", logo:"cin.png" },
 };
 
 
@@ -746,17 +749,24 @@ let histSortDir = "desc";
 
 function buildLeagueHome(teams, payouts) {
   const totalPot = payouts.reduce((s,p)=>s+p.amount,0);
-  const fmtD = v => "$"+Math.abs(v).toFixed(2);
+  const fmtMoney = v => "$"+Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 
-  const sortedPayouts = [...payouts].sort((a,b)=>b.amount-a.amount);
+  // Sort payouts in specific order
+  const PAYOUT_ORDER = ["Reg. season 1st","Reg. season 2nd","Playoff 1st","Playoff 2nd","Playoff 3rd","Toilet bowl"];
+  const sortedPayouts = [...payouts].sort((a,b) => {
+    const ai = PAYOUT_ORDER.findIndex(l => a.label.toLowerCase().includes(l.toLowerCase().substring(0,8)));
+    const bi = PAYOUT_ORDER.findIndex(l => b.label.toLowerCase().includes(l.toLowerCase().substring(0,8)));
+    return (ai===-1?99:ai)-(bi===-1?99:bi);
+  });
+
   const boxes = sortedPayouts.map(p =>
-    `<div class="pot-box"><div class="pot-box-label">${p.label}</div><div class="pot-box-val">${fmtD(p.amount)}</div></div>`
+    `<div class="pot-box"><div class="pot-box-label">${p.label}</div><div class="pot-box-val">${fmtMoney(p.amount)}</div></div>`
   ).join("");
 
   const potPanel = `
     <div class="pot-box pot-box-total" style="margin-bottom:.75rem">
       <div class="pot-box-label">Total Pot</div>
-      <div class="pot-box-val">${fmtD(totalPot)}</div>
+      <div class="pot-box-val">${fmtMoney(totalPot)}</div>
     </div>
     <div class="pot-boxes-grid" style="margin-bottom:1.5rem">${boxes}</div>
   `;
@@ -2544,7 +2554,11 @@ function buildFASection() {
 
 function renderFATable(posFilter, faData) {
   const data = faData || (UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA);
-  let filtered = data.filter(p => posFilter === "ALL" || (p.primaryPos || p.pos) === posFilter);
+  let filtered = data.filter(p => {
+    const posMatch = posFilter === "ALL" || (p.primaryPos || p.pos) === posFilter;
+    const teamMatch = faCurrentTeam === "ALL" || (p.team || p.owner) === faCurrentTeam;
+    return posMatch && teamMatch;
+  });
   if (!filtered.length) return `<div style="padding:1.5rem;text-align:center;color:var(--text3);font-size:13px">No upcoming free agents at this position</div>`;
 
   // Dedupe multi-pos players in ALL view, then sort per user preference
@@ -2965,45 +2979,81 @@ function buildFinancialsSubmenu(teams) {
   }).join("");
 }
 
+let finSortCol = 'capHit';
+let finSortDir = 'desc';
+
 function buildFinancialsHome() {
   const teamArr = Object.values(_teams);
+  const CAP = 250000000;
   const fmtM = v => "$"+(v/1e6).toFixed(2)+"M";
-  const fmtDollars = v => "$"+Math.abs(v).toFixed(2);
+  const fmtD = v => "$"+Math.abs(v).toFixed(2);
 
-  function rankingTable(title, items, valFn, barFn, colorFn, fmtFn) {
-    const sorted = [...items].sort((a,b) => barFn(b) - barFn(a));
-    const max = barFn(sorted[0]) || 1;
-    return `<div class="fin-ranking">
-      <div class="fin-ranking-title">${title}</div>
-      ${sorted.map((t,i) => {
-        const meta = TEAM_META[t.name] || {};
-        const val  = fmtFn(t);
-        const pct  = Math.min(100, Math.round(barFn(t)/max*100));
-        const col  = colorFn ? colorFn(t) : "#378ADD";
-        return `<div class="fin-rank-row">
-          <span class="fin-rank-num">${i+1}</span>
-          ${teamLogo(t.name, 24)}
-          <span class="fin-rank-name">${t.name}</span>
-          <div class="fin-rank-bar-wrap"><div class="fin-rank-bar-bg"><div class="fin-rank-bar-fill" style="width:${pct}%;background:${col}"></div></div></div>
-          <span class="fin-rank-val" style="color:${col}">${val}</span>
-        </div>`;
-      }).join("")}
-    </div>`;
+  const cols = [
+    { key:"name",         label:"Team",            align:"left"  },
+    { key:"capHit",       label:"Total Cap Hit",    align:"right" },
+    { key:"payroll",      label:"Active Payroll",   align:"right" },
+    { key:"tax",          label:"Payroll Tax",      align:"right" },
+    { key:"dead",         label:"Dead Money",       align:"right" },
+    { key:"milb",         label:"MiLB Pool",        align:"right" },
+    { key:"netDues",      label:"Net Dues",         align:"right" },
+    { key:"guaranteed27", label:"2027 Guarantee",   align:"right" },
+  ];
+
+  function getVal(t, key) {
+    return { name:t.name, capHit:t.payrollReal+t.deadReal, payroll:t.payrollReal,
+      tax:t.taxReal, dead:t.deadReal, milb:t.mlBonusReal,
+      netDues:t.finalDues, guaranteed27:t.guaranteed2027 }[key];
   }
 
-  const CAP = 250000000;
-  const barColorCap = t => { const p=(t.payrollReal+t.deadReal)/CAP; return p>1?"#A32D2D":p>.96?"#BA7517":"#3B6D11"; };
-  const duesColor = t => t.finalDues >= 0 ? "var(--good)" : "var(--danger)";
-  const taxColor  = t => t.taxDues > 240 ? "#BA7517" : "var(--text2)";
+  const sorted = [...teamArr].sort((a,b) => {
+    const av = getVal(a, finSortCol), bv = getVal(b, finSortCol);
+    if (typeof av==="string") return finSortDir==="asc"?av.localeCompare(bv):bv.localeCompare(av);
+    return finSortDir==="asc"?av-bv:bv-av;
+  });
 
-  return `<div class="fin-rankings-grid">
-    ${rankingTable("Total Cap Hit (Payroll + Dead Money)",   teamArr, t=>t, t=>(t.payrollReal+t.deadReal), barColorCap, t=>fmtM(t.payrollReal+t.deadReal))}
-    ${rankingTable("Net Dues Owed / Earned",                 teamArr, t=>t, t=>Math.abs(t.finalDues),      duesColor,   t=>(t.finalDues>=0?"+ ":"- ")+fmtDollars(t.finalDues))}
-    ${rankingTable("Payroll Tax",                            teamArr, t=>t, t=>t.taxReal,                  taxColor,    t=>fmtM(t.taxReal))}
-    ${rankingTable("Dead Money",                             teamArr, t=>t, t=>t.deadReal,                 t=>"#BA7517",t=>t.deadReal>0?fmtM(t.deadReal):"None")}
-    ${rankingTable("MiLB Bonus Pool",                        teamArr, t=>t, t=>t.mlBonusReal,              t=>"#378ADD",t=>fmtM(t.mlBonusReal))}
-    ${rankingTable("2027 Guaranteed Payroll",                teamArr, t=>t, t=>t.guaranteed2027,           t=>"#5856D6",t=>fmtM(t.guaranteed2027))}
-  </div>`;
+  const headers = cols.map(c => {
+    const isSorted = finSortCol===c.key;
+    const cls = isSorted?(finSortDir==="desc"?"sorted-desc":"sorted-asc"):"";
+    const align = c.align==="left"?"text-align:left":"";
+    return `<th class="${cls}" style="${align}" onclick="sortFinTable(\'${c.key}\')">${c.label}</th>`;
+  }).join("");
+
+  const rows = sorted.map(t => {
+    const capHit = t.payrollReal+t.deadReal;
+    const capPct = Math.min(104,Math.round(capHit/CAP*100));
+    const capColor = capPct>100?"var(--danger)":capPct>96?"var(--warn)":"var(--good)";
+    const dueColor = t.finalDues>=0?"var(--good)":"var(--danger)";
+    const taxColor = t.taxDues>240?"var(--warn)":"var(--text)";
+    return `<tr onclick="showTeamFinancials(\'${t.name.replace(/'/g,"\\'")}\');showSection(\'financials\')" style="cursor:pointer">
+      <td><div class="fin-team-cell">
+        <img src="${LOGO_BASE}${(TEAM_META[t.name]||{}).logo||""}" width="28" height="28" style="border-radius:14px;object-fit:contain;background:#fff;flex-shrink:0">
+        <span style="font-weight:500">${t.name}</span>
+      </div></td>
+      <td style="color:${capColor};font-weight:500">${fmtM(capHit)}</td>
+      <td>${fmtM(t.payrollReal)}</td>
+      <td style="color:${taxColor}">${fmtM(t.taxReal)}</td>
+      <td style="color:${t.deadReal>0?"var(--warn)":"var(--text)"}">${t.deadReal>0?fmtM(t.deadReal):"—"}</td>
+      <td>${fmtM(t.mlBonusReal)}</td>
+      <td style="color:${dueColor};font-weight:500">${t.finalDues>=0?"+ ":"- "}${fmtD(t.finalDues)}</td>
+      <td>${fmtM(t.guaranteed2027)}</td>
+    </tr>`;
+  }).join("");
+
+  return `
+    <p style="font-size:12px;color:var(--text3);margin-bottom:.75rem">Click any row to view full team detail · Click column headers to sort</p>
+    <div class="fin-table-wrap">
+      <table class="fin-table">
+        <thead><tr>${headers}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+
+function sortFinTable(col) {
+  finSortDir = finSortCol===col?(finSortDir==="desc"?"asc":"desc"):(col==="name"?"asc":"desc");
+  finSortCol = col;
+  document.getElementById("financials-content").innerHTML = buildFinancialsHome();
 }
 
 function buildTeamFinancialDetail(teamName) {
@@ -3179,8 +3229,9 @@ function buildRosterSubmenu(teams) {
 // ─────────────────────────────────────────────
 //  Section inner HTML builders
 // ─────────────────────────────────────────────
-let faCurrentSort = "salary"; // "salary" or "lastname"
+let faCurrentSort = "salary";
 let faCurrentPos  = "ALL";
+let faCurrentTeam = "ALL";
 
 function buildFASectionInner(teams) {
   const FA_DATA = UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA;
@@ -3192,6 +3243,22 @@ function buildFASectionInner(teams) {
       style="${p==="ALL"?"background:"+col.bg+";color:"+col.text+";border-color:"+col.bg:""}"
     >${p==="ALL"?"All Positions":p}</button>`;
   }).join("");
+
+  // Team filter buttons — logo circles
+  const teamOrder = [
+    "Kansas City Royals","Seattle Mariners","Los Angeles Dodgers","Los Angeles Angels",
+    "Texas Rangers","Milwaukee Brewers","Las Vegas A\'s","Chicago Cubs",
+    "San Diego Padres","Baltimore Orioles","San Francisco Giants","Cincinnati Reds"
+  ];
+  const teamBtns = teamOrder.map(name => {
+    const meta = TEAM_META[name] || {};
+    const short = name.replace("Los Angeles","LA").replace("Las Vegas","LV").replace("San Francisco","SF").replace("San Diego","SD");
+    const isActive = faCurrentTeam === name;
+    return `<button class="fa-team-filter ${isActive?"active":""}" onclick="filterFATeam(\'${name.replace(/'/g,"\\'")}\') " id="fa-team-${name.replace(/[^a-z0-9]/gi,"_")}" title="${name}" style="${isActive?"outline:2px solid "+meta.color1:""}">
+      <img src="${LOGO_BASE}${meta.logo||""}" width="26" height="26" style="border-radius:13px;object-fit:contain;background:#fff">
+    </button>`;
+  }).join("");
+
   const confirmed = FA_DATA.filter(p=>!p.to).length;
   const pending   = FA_DATA.filter(p=>p.to).length;
   return `
@@ -3200,12 +3267,28 @@ function buildFASectionInner(teams) {
       <div class="fa-filters" style="margin-bottom:0;flex:1">${filterBtns}</div>
       <div style="display:flex;gap:6px;flex-shrink:0">
         <button class="fa-sort-btn active" id="sort-salary" onclick="setFASort(\'salary\')" title="Sort by salary">💰 Salary</button>
-        <button class="fa-sort-btn" id="sort-lastname" onclick="setFASort(\'lastname\')" title="Sort by last name">A–Z Last Name</button>
+        <button class="fa-sort-btn" id="sort-lastname" onclick="setFASort(\'lastname\')" title="Sort by last name">A–Z Name</button>
       </div>
     </div>
-    <div class="fa-table-wrap" id="fa-table-wrap">${renderFATable("ALL", FA_DATA)}</div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="fa-filter-btn ${faCurrentTeam==="ALL"?"active":""}" onclick="filterFATeam(\'ALL\')" id="fa-team-ALL"
+        style="${faCurrentTeam==="ALL"?"background:#1F3864;color:#fff;border-color:#1F3864":""}">All Teams</button>
+      ${teamBtns}
+    </div>
+    <div class="fa-table-wrap" id="fa-table-wrap">${renderFATable(faCurrentPos, FA_DATA)}</div>
     <p class="fa-footnote">* Player has a 2-year team option — will only reach free agency if the team declines their option</p>
   `;
+}
+
+function filterFATeam(team) {
+  faCurrentTeam = team;
+  // Re-render FA section to update active state on team buttons
+  const FA_DATA = UPCOMING_FA_LIVE.length > 0 ? UPCOMING_FA_LIVE : UPCOMING_FA;
+  document.getElementById("fa-content").innerHTML = buildFASectionInner({});
+  // Re-apply sort btn state
+  document.querySelectorAll(".fa-sort-btn").forEach(b=>b.classList.remove("active"));
+  const sb = document.getElementById("sort-"+faCurrentSort);
+  if (sb) sb.classList.add("active");
 }
 
 function setFASort(sort) {
@@ -3259,7 +3342,7 @@ function buildRulesSectionInner() {
   // ── Historical results grouped by year, each year collapsed by default ──
   // Within each year, group by category with accordion
   if (history.length > 0) {
-    const years = [...new Set(history.map(r=>r.year))].sort((a,b)=>b.localeCompare(a));
+    const years = [...new Set(history.map(r=>r.year))].filter(y=>y!=="Unknown").sort((a,b)=>b.localeCompare(a));
     years.forEach((year, yi) => {
       const yearItems = history.filter(r=>r.year===year);
       const passed = yearItems.filter(r=>r.passed).length;
@@ -3384,7 +3467,9 @@ function getPlayerSalary(player, year) {
   const posKey   = pos==="DH"?"1B":(ARB_ESTIMATES[pos]?pos:"OF");
 
   if (CONTRACT_DATA[name] && CONTRACT_DATA[name][year]) {
-    return { salary:CONTRACT_DATA[name][year], type:"ext", estimate:false };
+    // Extension: current year is guaranteed, future years are non-guaranteed (estimate=true)
+    const isEstimate = year > CURRENT_YEAR;
+    return { salary:CONTRACT_DATA[name][year], type:"ext", estimate:isEstimate };
   }
   if (cLower==="min0") return { salary:0, type:"minor", estimate:false };
 
@@ -3406,11 +3491,15 @@ function getPlayerSalary(player, year) {
 
   const minMatch = cLower.match(/^min(\d+)$/);
   if (minMatch) {
-    const minYears = parseInt(minMatch[1]);
-    const lastMinYear = CURRENT_YEAR+minYears-1;
-    if (year>lastMinYear) {
-      const arbYear = year-lastMinYear;
-      if (arbYear<=3) {
+    // Min1 = currently in year 1 of 3 pre-arb years (2 more min years remaining after this)
+    // Min2 = currently in year 2 of 3 pre-arb years (1 more min year remaining after this)
+    // Min3 = currently in year 3 of 3 pre-arb years (0 more min years, next year = Arb1)
+    const minYearNum = parseInt(minMatch[1]); // which min year they are in (1, 2, or 3)
+    const remainingMinYears = 3 - minYearNum; // how many more min years after current
+    const lastMinYear = CURRENT_YEAR + remainingMinYears;
+    if (year > lastMinYear) {
+      const arbYear = year - lastMinYear;
+      if (arbYear <= 3) {
         const est = (ARB_ESTIMATES[posKey]||ARB_ESTIMATES["OF"])["Arb"+arbYear]||0;
         return { salary:est, type:"arb", estimate:true };
       }
