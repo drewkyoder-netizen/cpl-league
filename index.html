@@ -3539,10 +3539,12 @@ function getPlayerSalary(player, year) {
   const arbMatch = cLower.match(/^arb(\d+)$/);
   if (arbMatch) {
     const arbN = parseInt(arbMatch[1]);
-    const futureArbN = arbN+(year-CURRENT_YEAR);
-    if (futureArbN>4) return { salary:0, type:"ufa", estimate:false };
-    // Current year: use actual salary from sheet; future years: just show label
-    if (year === CURRENT_YEAR) return { salary, type:"arb", estimate:false, arbLabel:"Arb"+futureArbN };
+    const futureArbN = arbN + (year - CURRENT_YEAR);
+    // Standard arb players only go Arb1→Arb2→Arb3→UFA (Arb4 is Super Two only)
+    if (futureArbN > 3) return { salary:0, type:"ufa", estimate:false };
+    // Current year: show salary only (no label needed — contract column shows Arb1 etc.)
+    if (year === CURRENT_YEAR) return { salary, type:"arb", estimate:false, arbLabel:null };
+    // Future arb years: show label only
     return { salary:0, type:"arb", estimate:false, arbLabel:"Arb"+futureArbN };
   }
 
@@ -3669,8 +3671,13 @@ function buildRosterTable(teamName, players, title, deadPlayers, farmBadge) {
       if (r.type==="ufa") return yr===ufy?`<td><span class="ct-badge ct-ufa">UFA</span></td>`:`<td></td>`;
       // Arb years: show label (Arb1/Arb2/Arb3) with salary if current year
       if (r.type==="arb") {
+        // Current year arb: salary is known — show just the salary
+        if (r.arbLabel === null && r.salary > 0) {
+          return `<td><span class="ct-badge ct-arb">${fmtSalary(r.salary)}</span></td>`;
+        }
+        // Future arb years: show label only
         const lbl = r.arbLabel || "Arb";
-        const salPart = r.salary>0 ? " "+fmtSalary(r.salary) : "";
+        const salPart = r.salary > 0 ? " " + fmtSalary(r.salary) : "";
         return `<td><span class="ct-badge ct-arb">${lbl}${salPart}</span></td>`;
       }
       // Pre-arb: current year guaranteed, future years non-guaranteed (italics)
