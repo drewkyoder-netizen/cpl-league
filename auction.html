@@ -504,7 +504,14 @@ function parseMoney(s) {
   if (!s) return 0;
   s = s.toString().trim();
   const neg = s.includes("(") || s.startsWith("-");
-  const n = parseFloat(s.replace(/[$,()\-\s]/g,"")) || 0;
+  const upper = s.toUpperCase();
+  // Handle M/K suffixes (e.g. $18.25M, 250K)
+  const mMatch = upper.match(/([\d,\.]+)M/);
+  const kMatch = upper.match(/([\d,\.]+)K/);
+  let n = 0;
+  if (mMatch) n = parseFloat(mMatch[1].replace(/,/g,"")) * 1000000;
+  else if (kMatch) n = parseFloat(kMatch[1].replace(/,/g,"")) * 1000;
+  else n = parseFloat(s.replace(/[$,()\.\-\s]/g,"").replace(/[^\d]/g,"")) || 0;
   return neg ? -n : n;
 }
 
@@ -705,12 +712,15 @@ function renderNomList() {
   if (players.length === 0) {
     el.innerHTML = `<div class="nom-empty">No free agents found.</div>`;
   } else {
-    el.innerHTML = players.map(p=>`<div class="nom-row">
+    // Store players in a lookup for safe onclick handling
+    window._nomPlayers = {};
+    players.forEach((p,i) => { window._nomPlayers[i] = p; });
+    el.innerHTML = players.map((p,i)=>`<div class="nom-row">
       <div>
         <div class="nom-pname">${p.name}</div>
-        <div class="nom-pmeta">${p.position||"—"} · Last salary ${fmtM(p.salary)}</div>
+        <div class="nom-pmeta">${p.position||"—"}</div>
       </div>
-      <button class="nom-add-btn" ${nomUsed?"disabled":""} onclick="nominatePlayer('${p.name.replace(/'/g,"\\'")}','${p.position||""}',${p.salary||0})">
+      <button class="nom-add-btn" ${nomUsed?"disabled":""} data-idx="${i}" onclick="nominateByIdx(this.dataset.idx)">
         ${nomUsed?"Used":"+ Nominate"}
       </button>
     </div>`).join("");
@@ -721,6 +731,12 @@ function renderNomList() {
 }
 
 window.setNomPos = function(pos) { nomPosFilter = pos; renderNomList(); };
+
+window.nominateByIdx = function(idx) {
+  const p = window._nomPlayers && window._nomPlayers[idx];
+  if (!p) return;
+  window.nominatePlayer(p.name, p.position||"", p.salary||0);
+};
 
 window.nominatePlayer = function(name, position, salary) {
   const td = teamData[currentTeam] || {};
