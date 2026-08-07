@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPL Auction Room · 2026</title>
+<style>
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f5f3; --bg2: #ededea; --bg3: #e4e4e0;
+  --surface: #ffffff; --border: rgba(0,0,0,.1); --border2: rgba(0,0,0,.16);
+  --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
+  --good: #3b6d11; --good-bg: #eaf3de; --good-border: #639922;
+  --danger: #c8102e; --danger-bg: #fff5f5; --danger-border: #e24b4a;
+  --accent: #185fa5; --accent-bg: #e6f1fb; --accent-border: #378add;
+  --warn: #ba7517;
+  --radius: 8px; --radius-lg: 12px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+/* ── Screens ── */
+.screen { display: none; }
+.screen.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── Login ── */
+.login-page { align-items: center; justify-content: center; padding: 2rem 1rem; }
+.login-card { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 16px; padding: 2rem; width: 100%; max-width: 360px; }
+.login-logo { font-size: 24px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.login-sub { font-size: 13px; color: var(--text3); margin-bottom: 1.75rem; }
+.login-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; display: block; }
+.login-select { width: 100%; padding: 10px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 14px; font-family: var(--font); background: var(--surface); color: var(--text); margin-bottom: 1rem; appearance: none; cursor: pointer; }
+.login-btn { width: 100%; background: var(--text); color: #fff; border: none; border-radius: var(--radius); padding: 11px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font); transition: opacity .15s; }
+.login-btn:hover { opacity: .85; }
+.login-note { font-size: 11px; color: var(--text3); text-align: center; margin-top: .75rem; }
+
+/* ── App layout ── */
+.app-page { flex-direction: column; }
+.app-header { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 10px 1rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.app-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.app-header-right { display: flex; align-items: center; gap: 10px; }
+.user-chip { display: flex; align-items: center; gap: 7px; background: var(--bg); border: 0.5px solid var(--border2); border-radius: 20px; padding: 4px 12px 4px 5px; font-size: 12px; color: var(--text2); }
+.user-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: #fff; flex-shrink: 0; }
+.switch-link { font-size: 11px; color: var(--text3); background: none; border: none; cursor: pointer; font-family: var(--font); text-decoration: underline; }
+
+/* ── Nav tabs ── */
+.nav-tabs { background: var(--surface); border-bottom: 0.5px solid var(--border); display: flex; overflow-x: auto; flex-shrink: 0; }
+.nav-tab { padding: 10px 16px; font-size: 13px; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; font-family: var(--font); transition: color .12s; }
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+
+/* ── Main content ── */
+.main { flex: 1; padding: .85rem; max-width: 860px; width: 100%; margin: 0 auto; }
+
+/* ── Cap panel ── */
+.cap-panel { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: .85rem; overflow: hidden; }
+.cap-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 0.5px solid var(--border); cursor: pointer; user-select: none; }
+.cap-header-title { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; }
+.cap-toggle { font-size: 10px; color: var(--text3); }
+.cap-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--border); }
+.cap-cell { background: var(--surface); padding: 7px 6px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.cap-logo { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 600; color: #fff; flex-shrink: 0; background: #888; }
+.cap-logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: contain; background: #fff; }
+.cap-val { font-size: 11px; font-weight: 500; color: var(--text); }
+.cap-val.low { color: var(--danger); }
+.cap-badge { font-size: 8px; padding: 1px 5px; border-radius: 3px; font-weight: 600; line-height: 1.4; }
+.cap-badge.nom { background: #d1fae5; color: #065f46; }
+.cap-badge.done { background: #fee2e2; color: #991b1b; }
+.cap-spacer { height: 14px; }
+
+/* ── Opt-out bar ── */
+.opt-out-bar { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .65rem 1rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: .85rem; }
+.opt-out-text { font-size: 12px; color: var(--text2); }
+.opt-out-btn { background: var(--danger-bg); border: 0.5px solid var(--danger-border); border-radius: var(--radius); padding: 5px 14px; font-size: 12px; color: var(--danger); cursor: pointer; font-family: var(--font); }
+.opted-out-notice { background: #fff3cd; border: 0.5px solid #ffc107; border-radius: var(--radius-lg); padding: .65rem 1rem; font-size: 12px; color: #856404; margin-bottom: .85rem; text-align: center; }
+
+/* ── Section label ── */
+.sec-lbl { font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+
+/* ── Auction cards ── */
+.cards { display: flex; flex-direction: column; gap: 8px; }
+.a-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .9rem; }
+.a-card.closing { border-color: var(--danger); border-width: 1.5px; }
+.a-card.winning { border-color: var(--good-border); border-width: 1.5px; }
+.a-card.opted-out-card { opacity: .55; pointer-events: none; }
+.a-inner { display: grid; grid-template-columns: 1fr 48px 154px; gap: 12px; align-items: center; }
+.a-name { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.a-pos { display: inline-block; font-size: 10px; background: var(--bg2); color: var(--text2); border-radius: 4px; padding: 1px 6px; vertical-align: middle; margin-left: 4px; }
+.a-stats { display: flex; gap: 16px; margin-top: 6px; }
+.a-stat-lbl { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
+.a-stat-val { font-size: 18px; font-weight: 600; color: var(--text); line-height: 1.1; }
+.a-stat-val.urgent { color: var(--danger); }
+.a-stat-val.ok { color: var(--good); }
+.a-leader-logo { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; flex-shrink: 0; background: #888; }
+.a-leader-logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: contain; background: #fff; }
+.a-leader-logo.you { outline: 2.5px solid var(--good-border); outline-offset: 2px; }
+.a-btns { display: flex; flex-direction: column; gap: 5px; }
+.abtn { width: 100%; border-radius: 6px; padding: 7px 8px; font-size: 11px; cursor: pointer; font-family: var(--font); text-align: center; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); line-height: 1.3; transition: opacity .12s; }
+.abtn:hover { opacity: .85; }
+.abtn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+.abtn.blind-active { background: var(--good-bg); border-color: var(--good-border); color: var(--good); cursor: default; }
+.abtn.blind-active:hover { opacity: 1; }
+.abtn.winning-no-blind { background: var(--good-bg); border-color: var(--good-border); color: var(--good); }
+.a-blind-row { display: flex; gap: 3px; }
+.a-blind-input { flex: 1; padding: 5px 6px; border: 0.5px solid var(--border2); border-radius: 5px; font-size: 10px; font-family: var(--font); min-width: 0; background: var(--surface); color: var(--text); }
+.a-blind-btn { background: var(--accent-bg); border: 0.5px solid var(--accent-border); border-radius: 5px; padding: 5px 7px; font-size: 10px; color: var(--accent); cursor: pointer; font-family: var(--font); white-space: nowrap; }
+.empty-state { text-align: center; padding: 2rem 1rem; color: var(--text3); font-size: 13px; }
+
+/* ── Nominate tab ── */
+.nom-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.nom-search { padding: .75rem; border-bottom: 0.5px solid var(--border); }
+.nom-search input { width: 100%; padding: 9px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 13px; font-family: var(--font); background: var(--surface); color: var(--text); }
+.nom-pos-tabs { display: flex; border-bottom: 0.5px solid var(--border); padding: 0 .75rem; overflow-x: auto; }
+.nom-pos-tab { font-size: 12px; color: var(--text3); padding: 7px 10px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.nom-pos-tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+.nom-list { padding: .25rem .75rem; max-height: 400px; overflow-y: auto; }
+.nom-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-top: 0.5px solid var(--bg2); gap: 8px; }
+.nom-row:first-child { border-top: none; }
+.nom-pname { font-size: 13px; font-weight: 500; color: var(--text); }
+.nom-pmeta { font-size: 11px; color: var(--text3); }
+.nom-add-btn { background: var(--text); color: #fff; border: none; border-radius: 6px; padding: 5px 14px; font-size: 12px; cursor: pointer; font-family: var(--font); white-space: nowrap; flex-shrink: 0; }
+.nom-add-btn:disabled { background: var(--bg3); color: var(--text3); cursor: default; }
+.nom-footer { font-size: 11px; color: var(--text3); padding: .65rem .75rem; border-top: 0.5px solid var(--border); background: var(--bg); }
+.nom-empty { padding: 1.5rem; text-align: center; color: var(--text3); font-size: 13px; }
+
+/* ── Sold tab ── */
+.sold-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.sold-header { display: grid; grid-template-columns: 1fr 36px 90px; gap: 10px; padding: 7px 12px; border-bottom: 0.5px solid var(--border); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
+.sold-row { display: grid; grid-template-columns: 1fr 36px 90px; gap: 10px; padding: 9px 12px; border-top: 0.5px solid var(--bg2); align-items: center; font-size: 13px; }
+.sold-logo { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #fff; background: #888; }
+.sold-logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: contain; background: #fff; }
+.sold-price { font-weight: 600; color: var(--text); text-align: right; }
+
+/* ── Commissioner tab ── */
+.settings-section { display: flex; flex-direction: column; gap: 8px; }
+.settings-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .9rem; }
+.settings-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: .65rem; padding-bottom: .5rem; border-bottom: 0.5px solid var(--border); }
+.s-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 0.5px solid var(--bg2); font-size: 13px; gap: 10px; }
+.s-row:first-of-type { border-top: none; }
+.s-label { color: var(--text2); flex: 1; font-size: 12px; }
+.s-hint { font-size: 10px; color: var(--text3); margin-top: -4px; padding-bottom: 4px; }
+.s-input { width: 90px; padding: 5px 8px; border: 0.5px solid var(--border2); border-radius: 6px; font-size: 12px; font-family: var(--font); text-align: right; background: var(--surface); color: var(--text); }
+.s-select { padding: 5px 8px; border: 0.5px solid var(--border2); border-radius: 6px; font-size: 12px; font-family: var(--font); background: var(--surface); color: var(--text); max-width: 200px; flex: 1; }
+.s-btn { background: var(--bg); border: 0.5px solid var(--border2); border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: var(--font); color: var(--text); white-space: nowrap; }
+.s-btn:hover { background: var(--bg2); }
+.s-btn.danger { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger); }
+.s-btn.save { background: var(--text); color: #fff; border-color: var(--text); }
+
+/* ── Confirm modal ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 340px; width: 100%; }
+.modal-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: .5rem; }
+.modal-body { font-size: 13px; color: var(--text2); margin-bottom: 1.25rem; line-height: 1.5; }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-cancel { background: var(--bg); border: 0.5px solid var(--border2); border-radius: 6px; padding: 7px 16px; font-size: 13px; cursor: pointer; font-family: var(--font); color: var(--text); }
+.modal-confirm { background: var(--text); color: #fff; border: none; border-radius: 6px; padding: 7px 16px; font-size: 13px; cursor: pointer; font-family: var(--font); }
+.modal-confirm.danger { background: var(--danger); }
+
+/* ── Toast ── */
+.toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; border-radius: 20px; padding: 8px 20px; font-size: 13px; z-index: 300; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .a-inner { grid-template-columns: 1fr 42px 130px; gap: 8px; }
+  .a-name { font-size: 16px; }
+  .a-stat-val { font-size: 16px; }
+  .a-leader-logo { width: 42px; height: 42px; font-size: 11px; }
+  .cap-grid { grid-template-columns: repeat(4, 1fr); }
+  .main { padding: .65rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="screen-login" class="screen active login-page">
+  <div class="login-card">
+    <div class="login-logo">⚾ CPL Auction</div>
+    <div class="login-sub">2026 offseason · slow auction room</div>
+    <label class="login-label">Select your team</label>
+    <select class="login-select" id="login-team-select">
+      <option value="">— choose a team —</option>
+      <option value="CHC">Chicago Cubs · Drew Yoder</option>
+      <option value="CIN">Cincinnati Reds · Sean Wasserman</option>
+      <option value="BAL">Baltimore Orioles · David Cortez</option>
+      <option value="KC">Kansas City Royals · Jon Gelber</option>
+      <option value="SEA">Seattle Mariners · Dirk Adkinson</option>
+      <option value="LAD">Los Angeles Dodgers · David Fatoki</option>
+      <option value="LAA">Los Angeles Angels · Kirk Lacob</option>
+      <option value="TEX">Texas Rangers · Jake Gavlick</option>
+      <option value="MIL">Milwaukee Brewers · Jason Stein</option>
+      <option value="LV">Las Vegas A's · Chris Poulson</option>
+      <option value="SD">San Diego Padres · Bert Ortiz</option>
+      <option value="SF">San Francisco Giants · Mac Osborn</option>
+    </select>
+    <button class="login-btn" onclick="doLogin()">Enter auction room</button>
+    <div class="login-note">Test mode — no password required</div>
+  </div>
+</div>
+
+<!-- ── App Screen ── -->
+<div id="screen-app" class="screen app-page">
+  <div class="app-header">
+    <div class="app-title">⚾ CPL Auction · 2026</div>
+    <div class="app-header-right">
+      <div class="user-chip">
+        <div class="user-dot" id="user-dot"></div>
+        <span id="user-label"></span>
+      </div>
+      <button class="switch-link" onclick="switchTeam()">switch team</button>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showTab('live')">Live auctions</button>
+    <button class="nav-tab" onclick="showTab('nominate')">Nominate</button>
+    <button class="nav-tab" onclick="showTab('sold')">Sold</button>
+    <button class="nav-tab" id="commissioner-tab" style="display:none" onclick="showTab('commissioner')">⚙ Commissioner</button>
+  </div>
+
+  <div class="main">
+
+    <!-- Live tab -->
+    <div id="tab-live">
+      <div class="cap-panel">
+        <div class="cap-header" onclick="toggleCap()">
+          <span class="cap-header-title">Cap space &amp; nominations</span>
+          <span class="cap-toggle" id="cap-toggle-lbl">▲ collapse</span>
+        </div>
+        <div id="cap-body">
+          <div class="cap-grid" id="cap-grid"></div>
+        </div>
+      </div>
+
+      <div id="opt-out-bar" class="opt-out-bar">
+        <span class="opt-out-text">Done bidding for the offseason?</span>
+        <button class="opt-out-btn" onclick="confirmOptOut()">End my auction</button>
+      </div>
+      <div id="opted-out-notice" class="opted-out-notice" style="display:none">
+        You've opted out of the auction. You can still watch but cannot place bids or nominations.
+      </div>
+
+      <div class="sec-lbl" id="live-label">Active auctions</div>
+      <div class="cards" id="live-cards"></div>
+    </div>
+
+    <!-- Nominate tab -->
+    <div id="tab-nominate" style="display:none">
+      <div id="nom-opted-out" class="opted-out-notice" style="display:none">You've opted out — nominations are disabled.</div>
+      <div class="nom-wrap" id="nom-wrap">
+        <div class="nom-search">
+          <input type="text" id="nom-search-input" placeholder="Search free agents…" oninput="renderNomList()" />
+        </div>
+        <div class="nom-pos-tabs" id="nom-pos-tabs"></div>
+        <div class="nom-list" id="nom-list"></div>
+        <div class="nom-footer" id="nom-footer"></div>
+      </div>
+    </div>
+
+    <!-- Sold tab -->
+    <div id="tab-sold" style="display:none">
+      <div class="sold-wrap">
+        <div class="sold-header"><span>Player</span><span>Team</span><span style="text-align:right">Final bid</span></div>
+        <div id="sold-list"></div>
+      </div>
+    </div>
+
+    <!-- Commissioner tab -->
+    <div id="tab-commissioner" style="display:none">
+      <div class="settings-section">
+
+        <div class="settings-card">
+          <div class="settings-title">Timer settings</div>
+          <div class="s-row"><span class="s-label">Initial auction timer (hours)</span><div style="display:flex;gap:6px"><input class="s-input" id="s-timer-initial" value="18" /><button class="s-btn save" onclick="saveTimers()">Save</button></div></div>
+          <div class="s-row"><span class="s-label">Overbid reset timer (hours)</span><input class="s-input" id="s-timer-overbid" value="18" /></div>
+          <div class="s-row"><span class="s-label">Minimum bid increment</span><input class="s-input" id="s-increment" value="250000" /></div>
+          <div class="s-row"><span class="s-label">Minimum starting bid</span><input class="s-input" id="s-min-bid" value="1000000" /></div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Adjust team cap space</div>
+          <div class="s-row">
+            <select class="s-select" id="s-cap-team"></select>
+            <input class="s-input" id="s-cap-value" placeholder="$18.25M" />
+            <button class="s-btn save" onclick="saveCapSpace()">Save</button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Cancel a winning bid</div>
+          <div class="s-row">
+            <select class="s-select" id="s-cancel-bid-sel"></select>
+            <button class="s-btn danger" onclick="commCancelBid()">Cancel bid</button>
+          </div>
+          <div class="s-hint">Cancels the current leading bid and reopens bidding. Timer continues.</div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Remove a nomination</div>
+          <div class="s-row">
+            <select class="s-select" id="s-remove-nom-sel"></select>
+            <button class="s-btn danger" onclick="commRemoveNom()">Remove</button>
+          </div>
+          <div class="s-hint">Removes the auction entirely. Nomination slot returned to the team.</div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Reset a nomination slot</div>
+          <div class="s-row">
+            <select class="s-select" id="s-reset-slot-sel"></select>
+            <button class="s-btn" onclick="commResetSlot()">Reset slot</button>
+          </div>
+          <div class="s-hint">Gives the team their nomination slot back without removing their current nomination.</div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Undo team opt-out</div>
+          <div class="s-row">
+            <select class="s-select" id="s-undo-optout-sel"></select>
+            <button class="s-btn" onclick="commUndoOptOut()">Undo opt-out</button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Force close an auction</div>
+          <div class="s-row">
+            <select class="s-select" id="s-force-close-sel"></select>
+            <button class="s-btn danger" onclick="commForceClose()">Force close</button>
+          </div>
+          <div class="s-hint">Awards the player to the current leader immediately at the current bid.</div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Seed database for testing</div>
+          <div class="s-row">
+            <span class="s-label">Initialize teams with default cap space &amp; settings</span>
+            <button class="s-btn save" onclick="seedDatabase()">Seed now</button>
+          </div>
+          <div class="s-hint">Sets cap space for all 12 teams, default timer settings, and clears all auctions. Use only to start fresh.</div>
+          <div class="s-row">
+            <span class="s-label">Add a test auction manually</span>
+            <button class="s-btn" onclick="openSeedAuctionModal()">Add auction</button>
+          </div>
+          <div class="s-row">
+            <span class="s-label">Clear all auctions (reset)</span>
+            <button class="s-btn danger" onclick="clearAuctions()">Clear auctions</button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Pause / resume all auctions</div>
+          <div class="s-row">
+            <span class="s-label" id="s-pause-label">All timers will freeze until unpaused.</span>
+            <button class="s-btn danger" id="s-pause-btn" onclick="commTogglePause()">Pause all</button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Full bid history</div>
+          <div class="s-row">
+            <select class="s-select" id="s-history-sel"></select>
+            <button class="s-btn" onclick="commViewHistory()">View log</button>
+          </div>
+          <div id="s-history-log" style="margin-top:.5rem;font-size:12px;color:var(--text2);max-height:200px;overflow-y:auto"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Confirm Modal ── -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Confirm</div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" id="modal-confirm-btn" onclick="modalConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Blind Max Modal ── -->
+<div class="modal-overlay" id="blind-modal">
+  <div class="modal">
+    <div class="modal-title" id="blind-modal-title">Update blind max</div>
+    <div class="modal-body">
+      <input type="number" id="blind-modal-input" placeholder="Enter blind max (e.g. 12000000)" step="250000"
+        style="width:100%;padding:9px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:14px;font-family:var(--font);margin-top:.25rem" />
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeBlindModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmBlind()">Set Blind</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ── Firebase ── -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, update, push, get, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDlF3HYxe4CuVZQp4SVMMSpj-dlMfhz6pg",
+  authDomain: "cpl-league-auction.firebaseapp.com",
+  databaseURL: "https://cpl-league-auction-default-rtdb.firebaseio.com",
+  projectId: "cpl-league-auction",
+  storageBucket: "cpl-league-auction.firebasestorage.app",
+  messagingSenderId: "83620835147",
+  appId: "1:83620835147:web:86d9f514f3a92b4c13c2ce"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+const LOGO_BASE = "https://drewkyoder-netizen.github.io/cpl-league/";
+const COMMISSIONER = "CHC";
+const INCREMENT = 250000;
+const MIN_BID   = 1000000;
+const INITIAL_TIMER_MS  = 18 * 60 * 60 * 1000;
+const OVERBID_TIMER_MS  = 18 * 60 * 60 * 1000;
+
+const TEAMS = {
+  CHC:{ name:"Chicago Cubs",      owner:"Drew Yoder",     color:"#0E3386", logo:"chc.png" },
+  CIN:{ name:"Cincinnati Reds",   owner:"Sean Wasserman", color:"#C6011F", logo:"cin.png" },
+  BAL:{ name:"Baltimore Orioles", owner:"David Cortez",   color:"#DF4601", logo:"bal.png" },
+  KC: { name:"Kansas City Royals",owner:"Jon Gelber",     color:"#174185", logo:"kc.png"  },
+  SEA:{ name:"Seattle Mariners",  owner:"Dirk Adkinson",  color:"#005C5C", logo:"sea.png" },
+  LAD:{ name:"Los Angeles Dodgers",owner:"David Fatoki",  color:"#005A9C", logo:"lad.png" },
+  LAA:{ name:"Los Angeles Angels",owner:"Kirk Lacob",     color:"#BA0021", logo:"laa.png" },
+  TEX:{ name:"Texas Rangers",     owner:"Jake Gavlick",   color:"#003278", logo:"tex.png" },
+  MIL:{ name:"Milwaukee Brewers", owner:"Jason Stein",    color:"#12284B", logo:"mil.png" },
+  LV: { name:"Las Vegas A's",     owner:"Chris Poulson",  color:"#003831", logo:"lv.png"  },
+  SD: { name:"San Diego Padres",  owner:"Bert Ortiz",     color:"#2F241D", logo:"sd.png"  },
+  SF: { name:"San Francisco Giants",owner:"Mac Osborn",   color:"#FD5A1E", logo:"sf.png"  },
+};
+const TEAM_ORDER = ["CHC","CIN","BAL","KC","SEA","LAD","LAA","TEX","MIL","LV","SD","SF"];
+
+// ── State ──
+let currentTeam = null;
+let auctionData  = {};  // firebase snapshot
+let teamData     = {};  // firebase snapshot
+let settingsData = {};
+let freeAgents   = [];  // from CPL player salary sheet
+let nomPosFilter = "All";
+let modalAction  = null;
+let pendingBlindAuctionId = null;
+
+// ── Firebase listeners ──
+onValue(ref(db, "auctions"), snap => {
+  auctionData = snap.val() || {};
+  renderAll();
+});
+onValue(ref(db, "teams"), snap => {
+  teamData = snap.val() || {};
+  renderAll();
+});
+onValue(ref(db, "settings"), snap => {
+  settingsData = snap.val() || {};
+  renderAll();
+});
+
+// ── Load FA pool from Google Sheets ──
+const FA_POOL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=726351656&single=true&output=csv";
+
+async function loadFreeAgents() {
+  const proxies = [
+    FA_POOL_CSV,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(FA_POOL_CSV)}`,
+    `https://corsproxy.io/?${encodeURIComponent(FA_POOL_CSV)}`
+  ];
+  for (const proxy of proxies) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(()=>ctrl.abort(), 8000);
+      const res = await fetch(proxy, {signal:ctrl.signal});
+      clearTimeout(t);
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (!text || text.trim().startsWith("<")) continue;
+      // Columns: Player, Position
+      const rows = text.trim().split("\n").map(r => {
+        const parts = r.split(",").map(c => c.replace(/^"|"$/g,"").trim());
+        return { name: parts[0], position: parts[1]||"", salary: 0 };
+      });
+      freeAgents = rows.slice(1).filter(r => r.name);
+      renderNomList();
+      return;
+    } catch(e) { /* try next proxy */ }
+  }
+  showToast("Could not load FA pool — check sheet is published.");
+}
+
+function parseMoney(s) {
+  if (!s) return 0;
+  s = s.toString().trim();
+  const neg = s.includes("(") || s.startsWith("-");
+  const n = parseFloat(s.replace(/[$,()\-\s]/g,"")) || 0;
+  return neg ? -n : n;
+}
+
+function fmtM(n) {
+  if (!n) return "—";
+  return "$"+(n/1e6).toFixed(2)+"M";
+}
+
+function logoEl(abbr, size=24, cls="") {
+  const t = TEAMS[abbr];
+  if (!t) return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#888"></div>`;
+  return `<img src="${LOGO_BASE}${t.logo}" alt="${abbr}" width="${size}" height="${size}"
+    style="border-radius:50%;object-fit:contain;background:#fff;flex-shrink:0;display:block"
+    onerror="this.style.display='none'">`;
+}
+
+// ── Timer helpers ──
+function msLeft(expiresAt) { return Math.max(0, expiresAt - Date.now()); }
+function fmtTimer(ms) {
+  if (ms <= 0) return "0m";
+  const h = Math.floor(ms/3600000);
+  const m = Math.floor((ms%3600000)/60000);
+  if (h > 0) return `${h}h ${m}m`;
+  const s = Math.floor((ms%60000)/1000);
+  return `${m}m ${s}s`;
+}
+
+// ── Render all ──
+function renderAll() {
+  if (!currentTeam) return;
+  renderCapGrid();
+  renderLiveCards();
+  renderSoldList();
+  renderOptOut();
+  if (currentTeam === COMMISSIONER) populateCommissioner();
+}
+
+// ── Cap grid ──
+function renderCapGrid() {
+  const grid = document.getElementById("cap-grid");
+  if (!grid) return;
+  grid.innerHTML = TEAM_ORDER.map(abbr => {
+    const t = TEAMS[abbr];
+    const td = teamData[abbr] || {};
+    const cap = td.capSpace !== undefined ? td.capSpace : getDefaultCap(abbr);
+    const optedOut = td.optedOut;
+    const hasNom = td.nominationUsed;
+    const low = cap < 10000000;
+    let badge = "";
+    if (optedOut) badge = `<span class="cap-badge done">DONE</span>`;
+    else if (!hasNom) badge = `<span class="cap-badge nom">NOM</span>`;
+    else badge = `<span class="cap-spacer"></span>`;
+    return `<div class="cap-cell">
+      <div class="cap-logo" style="background:${t.color}">${logoEl(abbr,22)}</div>
+      <div class="cap-val${low?" low":""}">${fmtM(cap)}</div>
+      ${badge}
+    </div>`;
+  }).join("");
+}
+
+function getDefaultCap(abbr) {
+  const defaults = {
+    CHC:18250000, CIN:22000000, BAL:15500000, KC:31000000,
+    SEA:9750000,  LAD:5500000,  LAA:12000000, TEX:28500000,
+    MIL:41000000, LV:19250000,  SD:7000000,   SF:11500000
+  };
+  return defaults[abbr] || 20000000;
+}
+
+// ── Live cards ──
+function renderLiveCards() {
+  const container = document.getElementById("live-cards");
+  const lbl = document.getElementById("live-label");
+  const isPaused = settingsData.paused;
+  const live = Object.entries(auctionData).filter(([,a])=>a.status==="active");
+  if (!container) return;
+  if (live.length === 0) {
+    container.innerHTML = `<div class="empty-state">No active auctions right now.</div>`;
+    if (lbl) lbl.textContent = "Active auctions";
+    return;
+  }
+  if (lbl) lbl.textContent = `Active auctions · ${live.length}${isPaused?" · ⏸ PAUSED":""}`;
+
+  const td = teamData[currentTeam] || {};
+  const isOptedOut = td.optedOut;
+
+  container.innerHTML = live.map(([id,a]) => {
+    const remaining = msLeft(a.expiresAt);
+    const isClosing = remaining < 2*3600000 && remaining > 0;
+    const isWinning = a.leader === currentTeam;
+    const myBlind   = a.blindBids && a.blindBids[currentTeam];
+    const nextBid   = (a.currentBid || MIN_BID) + INCREMENT;
+
+    const cardClass = isClosing ? "a-card closing" : isWinning ? "a-card winning" : "a-card";
+    const timerClass = isClosing ? "urgent" : isWinning ? "ok" : "";
+    const posTag = a.position ? `<span class="a-pos">${a.position}</span>` : "";
+
+    const leaderLogoHtml = `<div class="a-leader-logo${isWinning?" you":""}" style="background:${a.leader?TEAMS[a.leader]?.color||"#888":"#888"}">
+      ${a.leader ? logoEl(a.leader, 44) : ""}
+    </div>`;
+
+    let btns = "";
+    if (isOptedOut) {
+      btns = `<button class="abtn" disabled style="opacity:.5">Opted out</button>`;
+    } else if (isWinning && myBlind) {
+      btns = `<button class="abtn blind-active" onclick="openBlindModal('${id}')">Blind max: ${fmtM(myBlind)}</button>
+              <div class="a-blind-row">
+                <input class="a-blind-input" id="blind-input-${id}" placeholder="Update blind max…" />
+                <button class="a-blind-btn" onclick="setBlind('${id}')">Set Blind</button>
+              </div>`;
+    } else if (isWinning) {
+      btns = `<button class="abtn winning-no-blind">Winning · ${fmtM(a.currentBid)}</button>
+              <div class="a-blind-row">
+                <input class="a-blind-input" id="blind-input-${id}" placeholder="Set blind max…" />
+                <button class="a-blind-btn" onclick="setBlind('${id}')">Set Blind</button>
+              </div>`;
+    } else {
+      btns = `<button class="abtn primary" onclick="placeBid('${id}',${nextBid})">Bid ${fmtM(nextBid)}</button>
+              <div class="a-blind-row">
+                <input class="a-blind-input" id="blind-input-${id}" placeholder="Blind max…" />
+                <button class="a-blind-btn" onclick="setBlind('${id}')">Set Blind</button>
+              </div>`;
+    }
+
+    return `<div class="${cardClass}${isOptedOut?" opted-out-card":""}">
+      <div class="a-inner">
+        <div>
+          <div><span class="a-name">${a.playerName}</span>${posTag}</div>
+          <div class="a-stats">
+            <div><div class="a-stat-lbl">Current bid</div><div class="a-stat-val">${fmtM(a.currentBid||MIN_BID)}</div></div>
+            <div><div class="a-stat-lbl">Closes in</div><div class="a-stat-val ${timerClass}">${isPaused?"PAUSED":fmtTimer(remaining)}</div></div>
+          </div>
+        </div>
+        ${leaderLogoHtml}
+        <div class="a-btns">${btns}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Live timer updates every 10s
+  clearInterval(window._timerInterval);
+  window._timerInterval = setInterval(renderLiveCards, 10000);
+}
+
+// ── Sold list ──
+function renderSoldList() {
+  const el = document.getElementById("sold-list");
+  if (!el) return;
+  const sold = Object.entries(auctionData).filter(([,a])=>a.status==="sold");
+  if (sold.length === 0) { el.innerHTML = `<div class="empty-state" style="padding:1rem">No sales yet.</div>`; return; }
+  el.innerHTML = sold.map(([,a]) => `<div class="sold-row">
+    <div><div style="font-weight:600;color:var(--text)">${a.playerName}</div><div style="font-size:11px;color:var(--text3)">${a.position||""}</div></div>
+    <div class="sold-logo" style="background:${a.winner?TEAMS[a.winner]?.color||"#888":"#888"}">${a.winner?logoEl(a.winner,32):""}</div>
+    <div class="sold-price">${fmtM(a.finalBid)}</div>
+  </div>`).join("");
+}
+
+// ── Opt-out ──
+function renderOptOut() {
+  const td = teamData[currentTeam] || {};
+  const bar    = document.getElementById("opt-out-bar");
+  const notice = document.getElementById("opted-out-notice");
+  const nomNotice = document.getElementById("nom-opted-out");
+  if (td.optedOut) {
+    if (bar) bar.style.display = "none";
+    if (notice) notice.style.display = "block";
+    if (nomNotice) nomNotice.style.display = "block";
+  } else {
+    if (bar) bar.style.display = "flex";
+    if (notice) notice.style.display = "none";
+    if (nomNotice) nomNotice.style.display = "none";
+  }
+}
+
+// ── Nominate ──
+function renderNomList() {
+  const el   = document.getElementById("nom-list");
+  const foot = document.getElementById("nom-footer");
+  const tabs = document.getElementById("nom-pos-tabs");
+  if (!el) return;
+
+  const td = teamData[currentTeam] || {};
+  const nomUsed = td.nominationUsed;
+  const nominatedNames = new Set(Object.values(auctionData).map(a=>a.playerName));
+  const query = (document.getElementById("nom-search-input")?.value||"").toLowerCase();
+
+  // Position tabs
+  const positions = ["All","C","1B","2B","SS","3B","OF","SP","RP"];
+  if (tabs) tabs.innerHTML = positions.map(p=>
+    `<div class="nom-pos-tab${nomPosFilter===p?" active":""}" onclick="setNomPos('${p}')">${p}</div>`
+  ).join("");
+
+  let players = freeAgents.filter(p => !nominatedNames.has(p.name));
+  if (nomPosFilter !== "All") players = players.filter(p=>(p.position||"").includes(nomPosFilter));
+  if (query) players = players.filter(p=>p.name.toLowerCase().includes(query)||
+    (p.position||"").toLowerCase().includes(query));
+
+  if (players.length === 0) {
+    el.innerHTML = `<div class="nom-empty">No free agents found.</div>`;
+  } else {
+    el.innerHTML = players.map(p=>`<div class="nom-row">
+      <div>
+        <div class="nom-pname">${p.name}</div>
+        <div class="nom-pmeta">${p.position||"—"} · Last salary ${fmtM(p.salary)}</div>
+      </div>
+      <button class="nom-add-btn" ${nomUsed?"disabled":""} onclick="nominatePlayer('${p.name.replace(/'/g,"\\'")}','${p.position||""}',${p.salary||0})">
+        ${nomUsed?"Used":"+ Nominate"}
+      </button>
+    </div>`).join("");
+  }
+  if (foot) foot.textContent = nomUsed
+    ? "You've used your nomination for this round."
+    : "1 nomination available · Starting bid minimum $1.00M";
+}
+
+window.setNomPos = function(pos) { nomPosFilter = pos; renderNomList(); };
+
+window.nominatePlayer = function(name, position, salary) {
+  const td = teamData[currentTeam] || {};
+  if (td.nominationUsed) { showToast("You've already used your nomination."); return; }
+  openModal(
+    `Nominate ${name}?`,
+    `This will open a new auction for <strong>${name}</strong> starting at $1.00M. You cannot undo a nomination without the commissioner's help.`,
+    async () => {
+      const timerMs = (settingsData.initialTimerHours||18) * 3600000;
+      const aRef = push(ref(db, "auctions"));
+      await set(aRef, {
+        playerName: name, position, lastSalary: salary,
+        nominatedBy: currentTeam, status: "active",
+        currentBid: MIN_BID, leader: null,
+        expiresAt: Date.now() + timerMs,
+        createdAt: Date.now(),
+        bids: {}
+      });
+      await update(ref(db, `teams/${currentTeam}`), { nominationUsed: true });
+      showToast(`${name} nominated! Auction is live.`);
+      showTab("live");
+    }, false
+  );
+};
+
+// ── Bidding ──
+window.placeBid = async function(auctionId, amount) {
+  const a = auctionData[auctionId];
+  if (!a || a.status !== "active") { showToast("Auction is no longer active."); return; }
+  const td = teamData[currentTeam] || {};
+  if (td.optedOut) { showToast("You've opted out of the auction."); return; }
+  if (a.leader === currentTeam) { showToast("You're already the leader."); return; }
+
+  openModal(
+    `Bid ${fmtM(amount)} on ${a.playerName}?`,
+    `This will make you the leader at <strong>${fmtM(amount)}</strong>. The timer will reset to ${settingsData.overbidTimerHours||18} hours.`,
+    async () => {
+      const timerMs = (settingsData.overbidTimerHours||18) * 3600000;
+      const prevLeader = a.leader;
+      const prevBid = a.currentBid || 0;
+
+      // Check if prev leader has a blind bid that beats this
+      let finalAmount = amount;
+      let finalLeader = currentTeam;
+      if (prevLeader && a.blindBids && a.blindBids[prevLeader] > amount) {
+        const blindMax = a.blindBids[prevLeader];
+        finalAmount = Math.min(blindMax, amount + INCREMENT);
+        finalLeader = prevLeader;
+        showToast(`Outbid! ${TEAMS[prevLeader]?.owner||prevLeader}'s blind bid auto-countered.`);
+      }
+
+      const bidsUpdate = {};
+      bidsUpdate[`auctions/${auctionId}/currentBid`] = finalAmount;
+      bidsUpdate[`auctions/${auctionId}/leader`]     = finalLeader;
+      bidsUpdate[`auctions/${auctionId}/expiresAt`]  = Date.now() + timerMs;
+      bidsUpdate[`auctions/${auctionId}/bids/${Date.now()}`] = {
+        team: currentTeam, amount, timestamp: Date.now(), resultAmount: finalAmount, resultLeader: finalLeader
+      };
+      await update(ref(db), bidsUpdate);
+      if (finalLeader === currentTeam) showToast(`Bid placed — you're winning at ${fmtM(finalAmount)}!`);
+    }, false
+  );
+};
+
+window.setBlind = function(auctionId) {
+  const input = document.getElementById(`blind-input-${auctionId}`);
+  const val = parseMoney(input?.value||"");
+  if (!val || val < MIN_BID) { showToast("Enter a valid blind max (minimum $1M)."); return; }
+  const a = auctionData[auctionId];
+  openModal(
+    `Set blind max of ${fmtM(val)} on ${a?.playerName}?`,
+    `The system will automatically bid for you up to <strong>${fmtM(val)}</strong> in $250K increments whenever you're outbid.`,
+    async () => {
+      await update(ref(db, `auctions/${auctionId}/blindBids`), { [currentTeam]: val });
+      // If not currently leading, place a bid now
+      if (a && a.leader !== currentTeam) {
+        const nextBid = (a.currentBid||MIN_BID) + INCREMENT;
+        if (val >= nextBid) {
+          await update(ref(db), {
+            [`auctions/${auctionId}/currentBid`]: nextBid,
+            [`auctions/${auctionId}/leader`]: currentTeam,
+            [`auctions/${auctionId}/expiresAt`]: Date.now() + (settingsData.overbidTimerHours||18)*3600000,
+          });
+          showToast(`Blind set — you're now winning at ${fmtM(nextBid)}!`);
+        } else {
+          showToast(`Blind set at ${fmtM(val)}. You need to bid manually first.`);
+        }
+      } else {
+        showToast(`Blind max updated to ${fmtM(val)}.`);
+      }
+      if (input) input.value = "";
+    }, false
+  );
+};
+
+window.openBlindModal = function(id) {
+  pendingBlindAuctionId = id;
+  const a = auctionData[id];
+  document.getElementById("blind-modal-title").textContent = `Update blind max — ${a?.playerName}`;
+  document.getElementById("blind-modal").classList.add("open");
+};
+window.closeBlindModal = function() { document.getElementById("blind-modal").classList.remove("open"); };
+window.confirmBlind = function() {
+  const val = parseMoney(document.getElementById("blind-modal-input").value);
+  closeBlindModal();
+  if (pendingBlindAuctionId) window.setBlind = window.setBlind; // re-use existing
+  if (pendingBlindAuctionId && val >= MIN_BID) {
+    update(ref(db, `auctions/${pendingBlindAuctionId}/blindBids`), { [currentTeam]: val });
+    showToast(`Blind max updated to ${fmtM(val)}.`);
+  }
+};
+
+// ── Opt-out ──
+window.confirmOptOut = function() {
+  openModal(
+    "End your auction?",
+    "You'll no longer be able to place bids or nominations. You can still watch the auction. The commissioner can undo this if needed.",
+    async () => {
+      await update(ref(db, `teams/${currentTeam}`), { optedOut: true });
+      showToast("You've opted out of the auction.");
+    }, true
+  );
+};
+
+// ── Commissioner actions ──
+function populateCommissioner() {
+  if (currentTeam !== COMMISSIONER) return;
+  const live = Object.entries(auctionData).filter(([,a])=>a.status==="active");
+  const sold = Object.entries(auctionData).filter(([,a])=>a.status==="sold");
+  const all  = [...live, ...sold];
+  const optedOut = Object.entries(teamData).filter(([,t])=>t.optedOut);
+  const usedNom  = Object.entries(teamData).filter(([k,t])=>t.nominationUsed);
+
+  const sel = (id, opts, placeholder) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = `<option value="">— ${placeholder} —</option>` +
+      opts.map(([v,l])=>`<option value="${v}">${l}</option>`).join("");
+  };
+
+  sel("s-cancel-bid-sel", live.map(([id,a])=>[id,`${a.playerName} (${TEAMS[a.leader]?.owner||"?"} leading ${fmtM(a.currentBid)})`]), "select auction");
+  sel("s-remove-nom-sel", live.map(([id,a])=>[id,`${a.playerName}`]), "select auction");
+  sel("s-reset-slot-sel", usedNom.map(([k])=>[k,TEAMS[k]?.name||k]), "select team");
+  sel("s-undo-optout-sel", optedOut.map(([k])=>[k,TEAMS[k]?.name||k]), "select team");
+  sel("s-force-close-sel", live.map(([id,a])=>[id,`${a.playerName} (${fmtM(a.currentBid)})`]), "select auction");
+  sel("s-history-sel", all.map(([id,a])=>[id,a.playerName]), "select auction");
+
+  const capTeamSel = document.getElementById("s-cap-team");
+  if (capTeamSel) capTeamSel.innerHTML = TEAM_ORDER.map(k=>`<option value="${k}">${TEAMS[k].name}</option>`).join("");
+
+  const isPaused = settingsData.paused;
+  const pb = document.getElementById("s-pause-btn");
+  const pl = document.getElementById("s-pause-label");
+  if (pb) { pb.textContent = isPaused ? "Resume all" : "Pause all"; pb.className = isPaused ? "s-btn save" : "s-btn danger"; }
+  if (pl) pl.textContent = isPaused ? "Auctions are currently paused." : "All timers will freeze until unpaused.";
+
+  const si = document.getElementById("s-timer-initial");
+  const so = document.getElementById("s-timer-overbid");
+  const sc = document.getElementById("s-increment");
+  const sm = document.getElementById("s-min-bid");
+  if (si) si.value = settingsData.initialTimerHours || 18;
+  if (so) so.value = settingsData.overbidTimerHours || 18;
+  if (sc) sc.value = settingsData.increment || 250000;
+  if (sm) sm.value = settingsData.minBid || 1000000;
+}
+
+window.saveTimers = async function() {
+  await update(ref(db, "settings"), {
+    initialTimerHours: parseFloat(document.getElementById("s-timer-initial").value)||18,
+    overbidTimerHours: parseFloat(document.getElementById("s-timer-overbid").value)||18,
+    increment: parseMoney(document.getElementById("s-increment").value)||250000,
+    minBid: parseMoney(document.getElementById("s-min-bid").value)||1000000,
+  });
+  showToast("Timer settings saved.");
+};
+
+window.saveCapSpace = async function() {
+  const team = document.getElementById("s-cap-team").value;
+  const val  = parseMoney(document.getElementById("s-cap-value").value);
+  if (!team||!val) { showToast("Select a team and enter a value."); return; }
+  await update(ref(db, `teams/${team}`), { capSpace: val });
+  showToast(`${TEAMS[team]?.name} cap space updated to ${fmtM(val)}.`);
+};
+
+window.commCancelBid = async function() {
+  const id = document.getElementById("s-cancel-bid-sel").value;
+  if (!id) { showToast("Select an auction."); return; }
+  const a = auctionData[id];
+  openModal("Cancel winning bid?",
+    `This will remove <strong>${TEAMS[a?.leader]?.owner||"?"}'s</strong> bid of ${fmtM(a?.currentBid)} on ${a?.playerName}. Bidding reopens but timer does not reset.`,
+    async () => {
+      await update(ref(db, `auctions/${id}`), { leader: null, currentBid: MIN_BID });
+      showToast("Bid cancelled. Auction reopened.");
+    }, true);
+};
+
+window.commRemoveNom = async function() {
+  const id = document.getElementById("s-remove-nom-sel").value;
+  if (!id) { showToast("Select an auction."); return; }
+  const a = auctionData[id];
+  openModal("Remove nomination?",
+    `This will permanently remove <strong>${a?.playerName}</strong> from the auction. The nomination slot will be returned to ${TEAMS[a?.nominatedBy]?.owner||"the team"}.`,
+    async () => {
+      await update(ref(db, `auctions/${id}`), { status: "removed" });
+      if (a?.nominatedBy) await update(ref(db, `teams/${a.nominatedBy}`), { nominationUsed: false });
+      showToast("Nomination removed.");
+    }, true);
+};
+
+window.commResetSlot = async function() {
+  const team = document.getElementById("s-reset-slot-sel").value;
+  if (!team) { showToast("Select a team."); return; }
+  await update(ref(db, `teams/${team}`), { nominationUsed: false });
+  showToast(`${TEAMS[team]?.name} nomination slot reset.`);
+};
+
+window.commUndoOptOut = async function() {
+  const team = document.getElementById("s-undo-optout-sel").value;
+  if (!team) { showToast("Select a team."); return; }
+  await update(ref(db, `teams/${team}`), { optedOut: false });
+  showToast(`${TEAMS[team]?.name} opt-out reversed.`);
+};
+
+window.commForceClose = async function() {
+  const id = document.getElementById("s-force-close-sel").value;
+  if (!id) { showToast("Select an auction."); return; }
+  const a = auctionData[id];
+  if (!a?.leader) { showToast("No current leader — cannot force close."); return; }
+  openModal("Force close auction?",
+    `Award <strong>${a.playerName}</strong> to ${TEAMS[a.leader]?.owner||a.leader} at <strong>${fmtM(a.currentBid)}</strong>?`,
+    async () => {
+      await update(ref(db, `auctions/${id}`), {
+        status: "sold", winner: a.leader, finalBid: a.currentBid, closedAt: Date.now()
+      });
+      const td = teamData[a.leader] || {};
+      const prevCap = td.capSpace !== undefined ? td.capSpace : getDefaultCap(a.leader);
+      await update(ref(db, `teams/${a.leader}`), { capSpace: prevCap - a.currentBid });
+      showToast(`${a.playerName} awarded to ${TEAMS[a.leader]?.name}.`);
+    }, true);
+};
+
+window.commTogglePause = async function() {
+  const isPaused = settingsData.paused;
+  await update(ref(db, "settings"), { paused: !isPaused });
+  showToast(isPaused ? "Auctions resumed." : "All auctions paused.");
+};
+
+window.commViewHistory = function() {
+  const id = document.getElementById("s-history-sel").value;
+  const logEl = document.getElementById("s-history-log");
+  if (!id || !logEl) return;
+  const a = auctionData[id];
+  const bids = a?.bids ? Object.values(a.bids).sort((a,b)=>a.timestamp-b.timestamp) : [];
+  if (!bids.length) { logEl.textContent = "No bids yet."; return; }
+  logEl.innerHTML = bids.map(b=>{
+    const t = new Date(b.timestamp).toLocaleString();
+    return `<div style="padding:4px 0;border-top:0.5px solid var(--border)">${t} — <strong>${TEAMS[b.team]?.owner||b.team}</strong> bid ${fmtM(b.amount)}</div>`;
+  }).join("");
+};
+
+// ── Modal helpers ──
+function openModal(title, body, onConfirm, isDanger) {
+  document.getElementById("modal-title").textContent = title;
+  document.getElementById("modal-body").innerHTML = body;
+  const btn = document.getElementById("modal-confirm-btn");
+  btn.className = isDanger ? "modal-confirm danger" : "modal-confirm";
+  modalAction = onConfirm;
+  document.getElementById("modal").classList.add("open");
+}
+window.closeModal = function() { document.getElementById("modal").classList.remove("open"); modalAction = null; };
+window.modalConfirm = function() { closeModal(); if (modalAction) modalAction(); };
+
+function showToast(msg, dur=2800) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), dur);
+}
+
+// ── Login / nav ──
+window.doLogin = function() {
+  const sel = document.getElementById("login-team-select");
+  const val = sel.value;
+  if (!val) { showToast("Select a team first."); return; }
+  currentTeam = val;
+  const t = TEAMS[val];
+  document.getElementById("user-dot").style.background = t.color;
+  document.getElementById("user-dot").textContent = t.owner.split(" ").map(w=>w[0]).join("").substring(0,2);
+  document.getElementById("user-label").textContent = t.owner;
+  if (val === COMMISSIONER) document.getElementById("commissioner-tab").style.display = "block";
+  else document.getElementById("commissioner-tab").style.display = "none";
+  document.getElementById("screen-login").classList.remove("active");
+  document.getElementById("screen-app").classList.add("active");
+  renderAll();
+  loadFreeAgents();
+  showTab("live");
+};
+
+window.switchTeam = function() {
+  currentTeam = null;
+  clearInterval(window._timerInterval);
+  document.getElementById("screen-app").classList.remove("active");
+  document.getElementById("screen-login").classList.add("active");
+};
+
+window.showTab = function(name) {
+  ["live","nominate","sold","commissioner"].forEach(t=>{
+    const el = document.getElementById("tab-"+t);
+    if (el) el.style.display = t===name ? "block" : "none";
+  });
+  document.querySelectorAll(".nav-tab").forEach(el=>{
+    el.classList.toggle("active", el.textContent.toLowerCase().includes(name)||(name==="commissioner"&&el.textContent.includes("⚙")));
+  });
+  if (name==="nominate") renderNomList();
+  if (name==="commissioner") populateCommissioner();
+};
+
+window.toggleCap = function() {
+  const b = document.getElementById("cap-body");
+  const l = document.getElementById("cap-toggle-lbl");
+  const h = b.style.display === "none";
+  b.style.display = h ? "" : "none";
+  l.textContent = h ? "▲ collapse" : "▼ expand";
+};
+
+// ── Check for expired auctions every 60s ──
+setInterval(async () => {
+  if (!currentTeam) return;
+  const now = Date.now();
+  for (const [id, a] of Object.entries(auctionData)) {
+    if (a.status === "active" && a.expiresAt <= now && !settingsData.paused) {
+      if (a.leader) {
+        const updates = {};
+        updates[`auctions/${id}/status`]   = "sold";
+        updates[`auctions/${id}/winner`]   = a.leader;
+        updates[`auctions/${id}/finalBid`] = a.currentBid;
+        updates[`auctions/${id}/closedAt`] = now;
+        const td = teamData[a.leader] || {};
+        const prevCap = td.capSpace !== undefined ? td.capSpace : getDefaultCap(a.leader);
+        updates[`teams/${a.leader}/capSpace`] = prevCap - a.currentBid;
+        await update(ref(db), updates);
+      }
+    }
+  }
+}, 60000);
+
+</script>
+</body>
+</html>
