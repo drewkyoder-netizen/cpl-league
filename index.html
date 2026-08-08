@@ -938,6 +938,7 @@ function expandTeam(i) {
     <div class="sec-header">2026 earnings</div>
     <div class="p-grid">
       <div class="pm"><div class="pm-lbl">Trade $ saved</div><div class="pm-val good">${t.tradeSavedReal===0?"None":fmtM(t.tradeSavedReal)}</div><div class="pm-sub">${t.tradeSavedDues===0?"$0.00":"$"+t.tradeSavedDues.toFixed(2)} earned back</div></div>
+      <div class="pm"><div class="pm-lbl">Injury savings</div><div class="pm-val good">${INJURY_DATA[teamName]?fmtM(INJURY_DATA[teamName]):"None"}</div><div class="pm-sub">${INJURY_DATA[teamName]?"75% of missed salary":"No qualifying injuries"}</div></div>
       <div class="pm"><div class="pm-lbl">Regular season finish</div><div class="pm-val" style="color:var(--text2)">${t.regSeasonFinish||"TBD"}</div><div class="pm-sub">${t.regSeasonDues>0?"$"+t.regSeasonDues.toFixed(2)+" earned":"$0.00 earned so far"}</div></div>
       <div class="pm"><div class="pm-lbl">Playoff finish</div><div class="pm-val" style="color:var(--text2)">${t.playoffFinish||"TBD"}</div><div class="pm-sub">${t.playoffDues>0?"$"+t.playoffDues.toFixed(2)+" earned":"$0.00 earned so far"}</div></div>
     </div>
@@ -3126,6 +3127,7 @@ function buildTeamFinancialDetail(teamName) {
     <div class="sec-header">2026 Earnings</div>
     <div class="p-grid" style="margin-bottom:1rem">
       <div class="pm"><div class="pm-lbl">Trade $ saved</div><div class="pm-val good">${t.tradeSavedReal===0?"None":fmtM(t.tradeSavedReal)}</div><div class="pm-sub">${t.tradeSavedDues===0?"$0.00":"$"+t.tradeSavedDues.toFixed(2)} earned back</div></div>
+      <div class="pm"><div class="pm-lbl">Injury savings</div><div class="pm-val good">${INJURY_DATA[teamName]?fmtM(INJURY_DATA[teamName]):"None"}</div><div class="pm-sub">${INJURY_DATA[teamName]?"75% of missed salary":"No qualifying injuries"}</div></div>
       <div class="pm"><div class="pm-lbl">Regular season finish</div><div class="pm-val" style="color:var(--text2)">${t.regSeasonFinish||"TBD"}</div><div class="pm-sub">${t.regSeasonDues>0?"$"+t.regSeasonDues.toFixed(2)+" earned":"$0.00 so far"}</div></div>
       <div class="pm"><div class="pm-lbl">Playoff finish</div><div class="pm-val" style="color:var(--text2)">${t.playoffFinish||"TBD"}</div><div class="pm-sub">${t.playoffDues>0?"$"+t.playoffDues.toFixed(2)+" earned":"$0.00 so far"}</div></div>
     </div>
@@ -3633,9 +3635,15 @@ function buildRosterTable(teamName, players, title, deadPlayers, farmBadge) {
 
   function posBadge(pos) {
     if (!pos) return "";
-    const p=pos.split(",")[0].trim();
-    const cls=["C","1B","2B","3B","SS","OF","UT","SP","RP"].includes(p)?"pos-"+p:"";
-    return `<span class="pos-badge ${cls}">${p}</span>`;
+    const POS_COLORS = {
+      "C":"#1d4ed8","1B":"#15803d","2B":"#15803d","SS":"#15803d","3B":"#15803d",
+      "OF":"#b45309","UT":"#6d28d9","SP":"#dc2626","RP":"#dc2626","DH":"#0369a1"
+    };
+    return pos.split(",").map(p => {
+      p = p.trim();
+      const col = POS_COLORS[p] || "#374151";
+      return `<span class="pos-badge" style="background:${col}">${p}</span>`;
+    }).join(" ");
   }
 
   function firstUFAYear(p) {
@@ -3650,7 +3658,9 @@ function buildRosterTable(teamName, players, title, deadPlayers, farmBadge) {
       const r=getPlayerSalary(p,yr);
       if (r.salary>0&&r.type!=="ufa"&&r.type!=="minor"){
         tot+=r.salary;
-        if (!r.estimate) gtd+=r.salary;
+        // Non-guaranteed: future arb labels (salary=0 so won't hit), future ext/TO/prearb
+        const isNonGtd = yr > CURRENT_YEAR && (r.type==="ext"||r.type==="to"||r.type==="prearb"||r.estimate);
+        if (!isNonGtd) gtd+=r.salary;
       }
     });
     yearTotals[yr]=tot; yearGuaranteed[yr]=gtd;
@@ -3709,7 +3719,7 @@ function buildRosterTable(teamName, players, title, deadPlayers, farmBadge) {
       const hit = dp.yearHits[yr] || 0;
       if (hit > 0) {
         yearTotals[yr] = (yearTotals[yr] || 0) + hit;
-        // Dead money is non-guaranteed
+        yearGuaranteed[yr] = (yearGuaranteed[yr] || 0) + hit; // Dead money IS guaranteed
       }
     });
   });
