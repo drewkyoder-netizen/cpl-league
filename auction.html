@@ -403,13 +403,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 <!-- ── Toast ── -->
 <div class="toast" id="toast"></div>
 
-<!-- ── Firebase ── -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, update, push, get, serverTimestamp }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const firebaseConfig = {
+<!-- ── Firebase compat SDK (global scope) ── -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({
   apiKey: "AIzaSyDlF3HYxe4CuVZQp4SVMMSpj-dlMfhz6pg",
   authDomain: "cpl-league-auction.firebaseapp.com",
   databaseURL: "https://cpl-league-auction-default-rtdb.firebaseio.com",
@@ -417,10 +415,17 @@ const firebaseConfig = {
   storageBucket: "cpl-league-auction.firebasestorage.app",
   messagingSenderId: "83620835147",
   appId: "1:83620835147:web:86d9f514f3a92b4c13c2ce"
-};
+});
+const db = firebase.database();
 
-const app = initializeApp(firebaseConfig);
-const db  = getDatabase(app);
+// Compat SDK wrappers to match modular API usage below
+function ref(db, path)           { return path ? db.ref(path) : db.ref(); }
+function onValue(r, cb)          { r.on("value", snap => cb(snap)); }
+function set(r, val)             { return r.set(val); }
+function update(r, val)          { return r.update(val); }
+function push(r, val)            { const nr = r.push(); if(val) nr.set(val); return nr; }
+function get(r)                  { return r.once("value"); }
+function serverTimestamp()       { return firebase.database.ServerValue.TIMESTAMP; }
 
 const LOGO_BASE = "https://drewkyoder-netizen.github.io/cpl-league/";
 const COMMISSIONER = "CHC";
