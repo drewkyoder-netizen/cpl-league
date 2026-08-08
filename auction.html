@@ -756,13 +756,13 @@ window._doNominate = function(idx) {
     nominatedBy: currentTeam,
     status: "active",
     currentBid: 1000000,
-    leader: null,
+    leader: currentTeam,
     expiresAt: Date.now() + timerMs,
     createdAt: Date.now(),
     bids: {}
   }).then(function() {
     db.ref("teams/" + currentTeam).update({ nominationUsed: true });
-    showToast(p.name + " nominated! Auction is live.");
+    showToast(p.name + " nominated! You lead at $1.00M.");
     showTab("live");
   }).catch(function(err) {
     alert("Firebase error: " + err.message);
@@ -775,55 +775,108 @@ window.nominatePlayer = function(name, position, salary) {
 
 // ── Bidding ──
 window.placeBid = function(auctionId, amount) {
-  const a = auctionData[auctionId];
+  var a = auctionData[auctionId];
   if (!a || a.status !== "active") { showToast("Auction is no longer active."); return; }
-  const td = teamData[currentTeam] || {};
+  var td = teamData[currentTeam] || {};
   if (td.optedOut) { showToast("You've opted out of the auction."); return; }
   if (a.leader === currentTeam) { showToast("You're already the leader."); return; }
-
   if (!confirm("Bid " + fmtM(amount) + " on " + a.playerName + "?")) return;
-  const timerMs = (settingsData.overbidTimerHours||18) * 3600000;
-  let finalAmount = amount;
-  let finalLeader = currentTeam;
-  if (a.leader && a.blindBids && a.blindBids[a.leader] > amount) {
-    finalAmount = Math.min(a.blindBids[a.leader], amount + INCREMENT);
+
+  var timerMs = ((settingsData && settingsData.overbidTimerHours) || 18) * 3600000;
+  var leaderBlind = (a.blindBids && a.leader) ? (a.blindBids[a.leader] || 0) : 0;
+  var finalAmount, finalLeader, toastMsg;
+
+  if (leaderBlind > 0 && leaderBlind >= amount) {
+    // Leader blind covers this bid — leader defends at the bid amount
+    finalAmount = amount;
     finalLeader = a.leader;
+    // Silent — bidder sees price didn't change, knows they were outbid
+    finalAmount = amount;
+    finalLeader = a.leader;
+  } else {
+    finalAmount = amount;
+    finalLeader = currentTeam;
   }
-  const updates = {};
+
+  var updates = {};
   updates["auctions/" + auctionId + "/currentBid"] = finalAmount;
   updates["auctions/" + auctionId + "/leader"]     = finalLeader;
   updates["auctions/" + auctionId + "/expiresAt"]  = Date.now() + timerMs;
-  updates["auctions/" + auctionId + "/bids/" + Date.now()] = {
-    team: currentTeam, amount: amount, timestamp: Date.now()
+  // Log the bid price increase only (not blind amounts)
+  updates["auctions/" + auctionId + "/priceLog/" + Date.now()] = {
+    newPrice: finalAmount, timestamp: Date.now(), type: "manual"
   };
   db.ref().update(updates).then(function() {
-    if (finalLeader === currentTeam) showToast("Bid placed — you're winning at " + fmtM(finalAmount) + "!");
-    else showToast("Outbid! " + (TEAMS[finalLeader]?.owner||finalLeader) + "'s blind bid auto-countered.");
+    if (finalLeader === currentTeam) showToast("Bid placed at " + fmtM(finalAmount) + "!");
+    // else silent — bidder sees current bid unchanged
+  }).catch(function(e) { alert("Error: " + e.message); });
+};
+
+  db.ref().update(updates).then(function() {
+    if (finalLeader === currentTeam) {
+      showToast("Bid placed — you're winning at " + fmtM(finalAmount) + "!");
+    } else {
+      showToast("Outbid! " + ((TEAMS[finalLeader] && TEAMS[finalLeader].owner) || finalLeader) + "'s blind max countered at " + fmtM(finalAmount) + ".");
+    }
   }).catch(function(e) { alert("Error: " + e.message); });
 };
 
 window.setBlind = function(auctionId) {
-  const input = document.getElementById("blind-input-" + auctionId);
-  const val = parseMoney(input ? input.value : "");
-  if (!val || val < MIN_BID) { showToast("Enter a valid blind max (minimum $1M)."); return; }
-  const a = auctionData[auctionId];
-  if (!confirm("Set blind max of " + fmtM(val) + " on " + (a ? a.playerName : "this player") + "?")) return;
-  db.ref("auctions/" + auctionId + "/blindBids").update({ [currentTeam]: val }).then(function() {
-    if (a && a.leader !== currentTeam) {
-      const nextBid = (a.currentBid || MIN_BID) + INCREMENT;
-      if (val >= nextBid) {
-        const updates = {};
-        updates["auctions/" + auctionId + "/currentBid"] = nextBid;
-        updates["auctions/" + auctionId + "/leader"]     = currentTeam;
-        updates["auctions/" + auctionId + "/expiresAt"]  = Date.now() + (settingsData.overbidTimerHours||18)*3600000;
-        db.ref().update(updates);
-        showToast("Blind set — you're now winning at " + fmtM(nextBid) + "!");
-      } else {
-        showToast("Blind set at " + fmtM(val) + ". Current bid is higher — bid manually first.");
-      }
-    } else {
-      showToast("Blind max updated to " + fmtM(val) + ".");
-    }
+  var input = document.getElementById("blind-input-" + auctionId);
+  var myBlind = parseMoney(input ? input.value : "");
+  if (!myBlind || myBlind < MIN_BID) { showToast("Enter a valid blind max (minimum $1M)."); return; }
+  var a = auctionData[auctionId];
+  if (!a) return;
+  if (!confirm("Set blind max of " + fmtM(myBlind) + " on " + a.playerName + "?")) return;
+
+  var timerMs = ((settingsData && settingsData.overbidTimerHours) || 18) * 3600000;
+  var currentBid = a.currentBid || MIN_BID;
+  var leader = a.leader;
+  var leaderBlind = (a.blindBids && leader && leader !== currentTeam) ? (a.blindBids[leader] || 0) : 0;
+  var finalAmount, finalLeader, toastMsg;
+
+  if (leader === currentTeam) {
+    // Already leading — update blind, price unchanged
+    finalAmount = currentBid;
+    finalLeader = currentTeam;
+    toastMsg = "Blind updated. You remain the leader.";
+
+  } else if (leaderBlind === 0) {
+    // No competing blind — take lead at currentBid + INCREMENT
+    finalAmount = currentBid + INCREMENT;
+    finalLeader = currentTeam;
+    toastMsg = "Blind set — you're now leading!";
+
+  } else if (myBlind > leaderBlind) {
+    // My blind beats leader blind — I win at leaderBlind + INCREMENT
+    finalAmount = leaderBlind + INCREMENT;
+    finalLeader = currentTeam;
+    toastMsg = "You're now leading!";
+
+  } else if (myBlind < leaderBlind) {
+    // Leader blind beats mine — leader stays, price = my blind
+    finalAmount = myBlind;
+    finalLeader = leader;
+    toastMsg = "You've been outbid.";
+
+  } else {
+    // Equal blinds — first leader wins
+    finalAmount = myBlind;
+    finalLeader = leader;
+    toastMsg = "You've been outbid.";
+  }
+
+  var updates = {};
+  updates["auctions/" + auctionId + "/blindBids/" + currentTeam] = myBlind;
+  updates["auctions/" + auctionId + "/currentBid"] = finalAmount;
+  updates["auctions/" + auctionId + "/leader"]     = finalLeader;
+  updates["auctions/" + auctionId + "/expiresAt"]  = Date.now() + timerMs;
+  // Log price increase only — never log blind amounts
+  updates["auctions/" + auctionId + "/priceLog/" + Date.now()] = {
+    newPrice: finalAmount, timestamp: Date.now(), type: "blind"
+  };
+  db.ref().update(updates).then(function() {
+    showToast(toastMsg);
     if (input) input.value = "";
   }).catch(function(e) { alert("Error: " + e.message); });
 };
@@ -1196,11 +1249,11 @@ function commViewHistory() {
   var logEl = document.getElementById("s-history-log");
   if (!id || !logEl) return;
   var a = auctionData[id];
-  var bids = a && a.bids ? Object.values(a.bids).sort(function(a,b){return a.timestamp-b.timestamp;}) : [];
-  if (!bids.length) { logEl.textContent = "No bids yet."; return; }
-  logEl.innerHTML = bids.map(function(b) {
+  var log = a && a.priceLog ? Object.values(a.priceLog).sort(function(x,y){return x.timestamp-y.timestamp;}) : [];
+  if (!log.length) { logEl.textContent = "No price changes yet."; return; }
+  logEl.innerHTML = log.map(function(b) {
     var t = new Date(b.timestamp).toLocaleString();
-    return '<div style="padding:4px 0;border-top:0.5px solid var(--border)">' + t + ' — <strong>' + ((TEAMS[b.team] ? TEAMS[b.team].owner : b.team)) + '</strong> bid ' + fmtM(b.amount) + '</div>';
+    return '<div style="padding:4px 0;border-top:0.5px solid var(--border)">' + t + ' — price moved to <strong>' + fmtM(b.newPrice) + '</strong></div>';
   }).join("");
 }
 </script>
