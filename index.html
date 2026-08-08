@@ -464,6 +464,7 @@ const HISTORY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBW
 const PLAYER_SALARY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1073495754&single=true&output=csv";
 const CONTRACTS_CSV  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1365077649&single=true&output=csv";
 const DEAD_MONEY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1704259981&single=true&output=csv";
+const INJURY_CSV    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1540142557&single=true&output=csv";
 const RULES_CSV     = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=1416486223&single=true&output=csv";
 const FORM_RESP_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=809192862&single=true&output=csv";
 
@@ -3003,16 +3004,18 @@ function buildFinancialsHome() {
     { key:"dead",     label:"Dead Money",       align:"right" },
     { key:"milb",     label:"MiLB Pool",        align:"right" },
     { key:"farmRank", label:"Farm Rank",         align:"center" },
+    { key:"injSaved", label:"Injury Savings",    align:"right" },
     { key:"netDues",  label:"Net Dues",         align:"right" },
   ];
 
   function getVal(t, key) {
     const capHit = t.payrollReal+t.deadReal;
     const fr = FARM_RANKINGS[t.name];
-    // farmRank sorts: rank 1 = best, so invert for desc sort (higher = better)
+    const injSaved = INJURY_DATA[t.name] || 0;
     return { name:t.name, capSpace:CAP-capHit, capHit, payroll:t.payrollReal,
       tax:t.taxReal, dead:t.deadReal, milb:t.mlBonusReal,
-      farmRank: fr ? (13 - fr.rank) : 0, // invert so #1 sorts to top in desc
+      farmRank: fr ? (13 - fr.rank) : 0,
+      injSaved,
       netDues:t.finalDues }[key];
   }
 
@@ -3049,6 +3052,7 @@ function buildFinancialsHome() {
       <td style="color:${t.deadReal>0?"var(--warn)":"var(--text)"}">${t.deadReal>0?fmtM(t.deadReal):"—"}</td>
       <td>${fmtM(t.mlBonusReal)}</td>
       <td style="text-align:center">${(()=>{const fr=FARM_RANKINGS[t.name];return fr?`<span style="font-weight:600;color:#7C3AED">#${fr.rank}</span>`:`<span style="color:var(--text3)">—</span>`;})()}</td>
+      <td style="text-align:right;color:var(--good)">${INJURY_DATA[t.name]?fmtM(INJURY_DATA[t.name]):"—"}</td>
       <td style="color:${dueColor};font-weight:500">${t.finalDues>=0?"+ ":"- "}${fmtD(t.finalDues)}</td>
     </tr>`;
   }).join("");
@@ -3623,7 +3627,8 @@ function buildRosterTable(teamName, players, title, deadPlayers, farmBadge) {
   const safeTitle = title.replace(/\s+/g,"_");
   function th(col,lbl,style) {
     const s=sortKey===col?(sortDir==="desc"?"sorted-desc":"sorted-asc"):"";
-    return `<th class="${s}" style="${style||"text-align:center"}" onclick="sortRosterTable(\'${teamName}\',\'${safeTitle}\',\'${col}\')">${lbl}</th>`;
+    const safeName = teamName.replace(/'/g,"\\'");
+    return `<th class="${s}" style="${style||"text-align:center"}" onclick="sortRosterTable('${safeName}','${safeTitle_key}','${col}')">${lbl}</th>`;
   }
 
   function posBadge(pos) {
@@ -3675,10 +3680,9 @@ function buildRosterTable(teamName, players, title, deadPlayers, farmBadge) {
         if (r.arbLabel === null && r.salary > 0) {
           return `<td><span class="ct-badge ct-arb">${fmtSalary(r.salary)}</span></td>`;
         }
-        // Future arb years: show label only
+        // Future arb years: label in italics (non-guaranteed)
         const lbl = r.arbLabel || "Arb";
-        const salPart = r.salary > 0 ? " " + fmtSalary(r.salary) : "";
-        return `<td><span class="ct-badge ct-arb">${lbl}${salPart}</span></td>`;
+        return `<td><span class="ct-badge ct-arb"><em>${lbl}</em></span></td>`;
       }
       // Pre-arb: current year guaranteed, future years non-guaranteed (italics)
       if (r.type==="prearb") {
@@ -3687,7 +3691,8 @@ function buildRosterTable(teamName, players, title, deadPlayers, farmBadge) {
       }
       // All others: show salary
       if (r.salary===0) return yr===ufy?`<td><span class="ct-badge ct-ufa">UFA</span></td>`:`<td></td>`;
-      const sal = r.estimate?`<em>${fmtSalary(r.salary)}</em>`:fmtSalary(r.salary);
+      const isFutureNG = yr > CURRENT_YEAR && (r.type==="ext" || r.type==="to");
+      const sal = isFutureNG ? `<em>${fmtSalary(r.salary)}</em>` : fmtSalary(r.salary);
       return `<td><span class="ct-badge ${ctCls[r.type]||"ct-vet"}">${sal}</span></td>`;
     }).join("");
     return `<tr>
@@ -3738,7 +3743,7 @@ function buildRosterTable(teamName, players, title, deadPlayers, farmBadge) {
       const yearCells = DISPLAY_YEARS.map(yr => {
         const hit = dp.yearHits[yr] || 0;
         if (!hit) return `<td></td>`;
-        return `<td><span class="ct-badge ct-prearb" style="background:#6B728033"><em>${fmtSalary(hit)}</em></span></td>`;
+        return `<td><span class="ct-badge ct-prearb" style="background:#6B728033">${fmtSalary(hit)}</span></td>`;
       }).join("");
       return `<tr style="opacity:0.75">
         <td><span class="roster-player-name" style="font-style:italic;color:var(--text2)">${dp.name}</span></td>
@@ -3884,6 +3889,26 @@ function parseContractExtensions(rows) {
 
 
 // ─────────────────────────────────────────────
+//  Injury Money Saved
+// ─────────────────────────────────────────────
+let INJURY_DATA = {}; // team -> total money saved
+
+function parseInjuryData(rows) {
+  const data = {};
+  if (rows.length < 2) return data;
+  // Columns: Player, Salary, Team, Money Saved
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[0] || !r[0].trim()) continue;
+    const team   = r[2] ? r[2].trim() : "";
+    const saved  = parseMoney(r[3]);
+    if (!team || !saved) continue;
+    data[team] = (data[team] || 0) + saved;
+  }
+  return data;
+}
+
+// ─────────────────────────────────────────────
 //  Dead Money
 // ─────────────────────────────────────────────
 let DEAD_MONEY_DATA = {}; // team -> [{ name, yearHits: {2026:x, 2027:x, ...} }]
@@ -3960,6 +3985,11 @@ async function loadData() {
       const deadCSV = await fetchCSV(DEAD_MONEY_CSV);
       DEAD_MONEY_DATA = parseDeadMoney(parseCSV(deadCSV));
     } catch(e) { console.warn("Dead money tab failed", e); }
+
+    try {
+      const injuryCSV = await fetchCSV(INJURY_CSV);
+      INJURY_DATA = parseInjuryData(parseCSV(injuryCSV));
+    } catch(e) { console.warn("Injury log tab failed", e); }
 
     try {
       const rulesCSV = await fetchCSV(RULES_CSV);
