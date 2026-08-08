@@ -480,8 +480,9 @@ const FA_POOL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBW
 async function loadFreeAgents() {
   const proxies = [
     FA_POOL_CSV,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(FA_POOL_CSV)}`,
-    `https://corsproxy.io/?${encodeURIComponent(FA_POOL_CSV)}`
+    "https://api.allorigins.win/raw?url=" + encodeURIComponent(FA_POOL_CSV),
+    "https://corsproxy.io/?" + encodeURIComponent(FA_POOL_CSV),
+    "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(FA_POOL_CSV)
   ];
   for (const proxy of proxies) {
     try {
@@ -502,7 +503,9 @@ async function loadFreeAgents() {
       return;
     } catch(e) { /* try next proxy */ }
   }
-  showToast("Could not load FA pool — check sheet is published.");
+  // All proxies failed — show error in the list
+  var el = document.getElementById("nom-list");
+  if (el) el.innerHTML = '<div class="nom-empty" style="color:var(--danger)">Could not load FA pool.<br><small>Make sure the Free Agent Pool tab is published as CSV.</small><br><br><button onclick="loadFreeAgents()" style="padding:6px 14px;background:var(--text);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">Retry</button></div>';
 }
 
 function parseMoney(s) {
@@ -1028,7 +1031,15 @@ window.showTab = function(name) {
   document.querySelectorAll(".nav-tab").forEach(el=>{
     el.classList.toggle("active", el.textContent.toLowerCase().includes(name)||(name==="commissioner"&&el.textContent.includes("⚙")));
   });
-  if (name==="nominate") renderNomList();
+  if (name==="nominate") {
+    if (freeAgents.length === 0) {
+      var el = document.getElementById("nom-list");
+      if (el) el.innerHTML = '<div class="nom-empty">Loading free agents…</div>';
+      loadFreeAgents();
+    } else {
+      renderNomList();
+    }
+  }
   if (name==="commissioner") populateCommissioner();
 };
 
@@ -1059,6 +1070,139 @@ setInterval(function() {
   });
 }, 60000);
 
+
+// ── Seed & Commissioner functions ──
+function seedDatabase() {
+  if (!confirm("Seed database? This resets all team cap spaces and clears all auctions.")) return;
+  var updates = {
+    "settings/initialTimerHours": 18, "settings/overbidTimerHours": 18,
+    "settings/increment": 250000, "settings/minBid": 1000000, "settings/paused": false,
+    "teams/CHC/capSpace": 18250000, "teams/CHC/nominationUsed": false, "teams/CHC/optedOut": false,
+    "teams/CIN/capSpace": 22000000, "teams/CIN/nominationUsed": false, "teams/CIN/optedOut": false,
+    "teams/BAL/capSpace": 15500000, "teams/BAL/nominationUsed": false, "teams/BAL/optedOut": false,
+    "teams/KC/capSpace":  31000000, "teams/KC/nominationUsed":  false, "teams/KC/optedOut":  false,
+    "teams/SEA/capSpace": 9750000,  "teams/SEA/nominationUsed": false, "teams/SEA/optedOut": false,
+    "teams/LAD/capSpace": 5500000,  "teams/LAD/nominationUsed": false, "teams/LAD/optedOut": false,
+    "teams/LAA/capSpace": 12000000, "teams/LAA/nominationUsed": false, "teams/LAA/optedOut": false,
+    "teams/TEX/capSpace": 28500000, "teams/TEX/nominationUsed": false, "teams/TEX/optedOut": false,
+    "teams/MIL/capSpace": 41000000, "teams/MIL/nominationUsed": false, "teams/MIL/optedOut": false,
+    "teams/LV/capSpace":  19250000, "teams/LV/nominationUsed":  false, "teams/LV/optedOut":  false,
+    "teams/SD/capSpace":  7000000,  "teams/SD/nominationUsed":  false, "teams/SD/optedOut":  false,
+    "teams/SF/capSpace":  11500000, "teams/SF/nominationUsed":  false, "teams/SF/optedOut":  false,
+    "auctions": null
+  };
+  db.ref().update(updates).then(function() {
+    showToast("Database seeded! All teams initialized.");
+  }).catch(function(e) { alert("Seed error: " + e.message); });
+}
+
+function openSeedAuctionModal() {
+  var name = prompt("Player name (e.g. Pete Alonso):");
+  if (!name || !name.trim()) return;
+  var pos = prompt("Position (e.g. 1B, OF):") || "";
+  var timerMs = ((settingsData && settingsData.initialTimerHours) || 18) * 3600000;
+  db.ref("auctions").push({
+    playerName: name.trim(), position: pos.trim(),
+    nominatedBy: currentTeam, status: "active",
+    currentBid: 1000000, leader: null,
+    expiresAt: Date.now() + timerMs,
+    createdAt: Date.now(), bids: {}
+  }).then(function() {
+    showToast(name.trim() + " auction created!");
+  }).catch(function(e) { alert("Error: " + e.message); });
+}
+
+function clearAuctions() {
+  if (!confirm("Clear ALL auctions? This cannot be undone.")) return;
+  db.ref("auctions").set(null).then(function() {
+    showToast("All auctions cleared.");
+  });
+}
+
+function saveTimers() {
+  db.ref("settings").update({
+    initialTimerHours: parseFloat(document.getElementById("s-timer-initial").value) || 18,
+    overbidTimerHours: parseFloat(document.getElementById("s-timer-overbid").value) || 18,
+    increment: parseMoney(document.getElementById("s-increment").value) || 250000,
+    minBid: parseMoney(document.getElementById("s-min-bid").value) || 1000000
+  }).then(function() { showToast("Timer settings saved."); });
+}
+
+function saveCapSpace() {
+  var team = document.getElementById("s-cap-team").value;
+  var val  = parseMoney(document.getElementById("s-cap-value").value);
+  if (!team || !val) { showToast("Select a team and enter a value."); return; }
+  db.ref("teams/" + team).update({ capSpace: val }).then(function() {
+    showToast((TEAMS[team] ? TEAMS[team].name : team) + " cap space updated to " + fmtM(val) + ".");
+  });
+}
+
+function commCancelBid() {
+  var id = document.getElementById("s-cancel-bid-sel").value;
+  if (!id) { showToast("Select an auction."); return; }
+  if (!confirm("Cancel the current winning bid?")) return;
+  db.ref("auctions/" + id).update({ leader: null, currentBid: 1000000 })
+    .then(function() { showToast("Bid cancelled. Auction reopened."); });
+}
+
+function commRemoveNom() {
+  var id = document.getElementById("s-remove-nom-sel").value;
+  var a  = auctionData[id];
+  if (!id || !a) { showToast("Select an auction."); return; }
+  if (!confirm("Remove " + a.playerName + " from auction?")) return;
+  db.ref("auctions/" + id).update({ status: "removed" }).then(function() {
+    if (a.nominatedBy) db.ref("teams/" + a.nominatedBy).update({ nominationUsed: false });
+    showToast("Nomination removed.");
+  });
+}
+
+function commResetSlot() {
+  var team = document.getElementById("s-reset-slot-sel").value;
+  if (!team) { showToast("Select a team."); return; }
+  db.ref("teams/" + team).update({ nominationUsed: false })
+    .then(function() { showToast((TEAMS[team] ? TEAMS[team].name : team) + " nomination slot reset."); });
+}
+
+function commUndoOptOut() {
+  var team = document.getElementById("s-undo-optout-sel").value;
+  if (!team) { showToast("Select a team."); return; }
+  db.ref("teams/" + team).update({ optedOut: false })
+    .then(function() { showToast((TEAMS[team] ? TEAMS[team].name : team) + " opt-out reversed."); });
+}
+
+function commForceClose() {
+  var id = document.getElementById("s-force-close-sel").value;
+  var a  = auctionData[id];
+  if (!id || !a) { showToast("Select an auction."); return; }
+  if (!a.leader) { showToast("No leader yet — cannot force close."); return; }
+  if (!confirm("Award " + a.playerName + " to " + (TEAMS[a.leader] ? TEAMS[a.leader].owner : a.leader) + " at " + fmtM(a.currentBid) + "?")) return;
+  db.ref("auctions/" + id).update({ status:"sold", winner:a.leader, finalBid:a.currentBid, closedAt:Date.now() })
+    .then(function() {
+      var td = teamData[a.leader] || {};
+      var prevCap = td.capSpace !== undefined ? td.capSpace : getDefaultCap(a.leader);
+      db.ref("teams/" + a.leader).update({ capSpace: prevCap - a.currentBid });
+      showToast(a.playerName + " awarded to " + (TEAMS[a.leader] ? TEAMS[a.leader].name : a.leader) + ".");
+    });
+}
+
+function commTogglePause() {
+  var isPaused = settingsData.paused;
+  db.ref("settings").update({ paused: !isPaused })
+    .then(function() { showToast(isPaused ? "Auctions resumed." : "All auctions paused."); });
+}
+
+function commViewHistory() {
+  var id = document.getElementById("s-history-sel").value;
+  var logEl = document.getElementById("s-history-log");
+  if (!id || !logEl) return;
+  var a = auctionData[id];
+  var bids = a && a.bids ? Object.values(a.bids).sort(function(a,b){return a.timestamp-b.timestamp;}) : [];
+  if (!bids.length) { logEl.textContent = "No bids yet."; return; }
+  logEl.innerHTML = bids.map(function(b) {
+    var t = new Date(b.timestamp).toLocaleString();
+    return '<div style="padding:4px 0;border-top:0.5px solid var(--border)">' + t + ' — <strong>' + ((TEAMS[b.team] ? TEAMS[b.team].owner : b.team)) + '</strong> bid ' + fmtM(b.amount) + '</div>';
+  }).join("");
+}
 </script>
 </body>
 </html>
