@@ -717,15 +717,14 @@ function renderNomList() {
   if (players.length === 0) {
     el.innerHTML = `<div class="nom-empty">No free agents found.</div>`;
   } else {
-    // Store players in a lookup for safe onclick handling
-    window._nomPlayers = {};
-    players.forEach((p,i) => { window._nomPlayers[i] = p; });
+    // Store players globally for onclick access
+    window._nomPlayers = players;
     el.innerHTML = players.map((p,i)=>`<div class="nom-row">
       <div>
         <div class="nom-pname">${p.name}</div>
         <div class="nom-pmeta">${p.position||"—"}</div>
       </div>
-      <button class="nom-add-btn" ${nomUsed?"disabled":""} data-idx="${i}" onclick="nominateByIdx(this.dataset.idx)">
+      <button class="nom-add-btn" ${nomUsed?"disabled":""} onclick="window._doNominate(${i})">
         ${nomUsed?"Used":"+ Nominate"}
       </button>
     </div>`).join("");
@@ -737,104 +736,93 @@ function renderNomList() {
 
 window.setNomPos = function(pos) { nomPosFilter = pos; renderNomList(); };
 
-window.nominateByIdx = function(idx) {
+window._doNominate = function(idx) {
   const p = window._nomPlayers && window._nomPlayers[idx];
-  if (!p) return;
-  window.nominatePlayer(p.name, p.position||"", p.salary||0);
+  if (!p) { alert("Player not found at index " + idx); return; }
+  const td = teamData[currentTeam] || {};
+  if (td.nominationUsed) { showToast("You have already used your nomination."); return; }
+  const confirmMsg = "Nominate " + p.name + " for auction starting at $1.00M?";
+  if (!confirm(confirmMsg)) return;
+  // Write to Firebase directly
+  const timerHours = (settingsData.initialTimerHours || 18);
+  const timerMs = timerHours * 3600 * 1000;
+  const newRef = db.ref("auctions").push();
+  newRef.set({
+    playerName: p.name,
+    position: p.position || "",
+    nominatedBy: currentTeam,
+    status: "active",
+    currentBid: 1000000,
+    leader: null,
+    expiresAt: Date.now() + timerMs,
+    createdAt: Date.now(),
+    bids: {}
+  }).then(function() {
+    db.ref("teams/" + currentTeam).update({ nominationUsed: true });
+    showToast(p.name + " nominated! Auction is live.");
+    showTab("live");
+  }).catch(function(err) {
+    alert("Firebase error: " + err.message);
+  });
 };
 
 window.nominatePlayer = function(name, position, salary) {
-  const td = teamData[currentTeam] || {};
-  if (td.nominationUsed) { showToast("You've already used your nomination."); return; }
-  openModal(
-    `Nominate ${name}?`,
-    `This will open a new auction for <strong>${name}</strong> starting at $1.00M. You cannot undo a nomination without the commissioner's help.`,
-    async () => {
-      const timerMs = (settingsData.initialTimerHours||18) * 3600000;
-      const aRef = push(ref(db, "auctions"));
-      await set(aRef, {
-        playerName: name, position, lastSalary: salary,
-        nominatedBy: currentTeam, status: "active",
-        currentBid: MIN_BID, leader: null,
-        expiresAt: Date.now() + timerMs,
-        createdAt: Date.now(),
-        bids: {}
-      });
-      await update(ref(db, `teams/${currentTeam}`), { nominationUsed: true });
-      showToast(`${name} nominated! Auction is live.`);
-      showTab("live");
-    }, false
-  );
+  // Called from _doNominate — kept for compatibility but _doNominate does the work
 };
 
 // ── Bidding ──
-window.placeBid = async function(auctionId, amount) {
+window.placeBid = function(auctionId, amount) {
   const a = auctionData[auctionId];
   if (!a || a.status !== "active") { showToast("Auction is no longer active."); return; }
   const td = teamData[currentTeam] || {};
   if (td.optedOut) { showToast("You've opted out of the auction."); return; }
   if (a.leader === currentTeam) { showToast("You're already the leader."); return; }
 
-  openModal(
-    `Bid ${fmtM(amount)} on ${a.playerName}?`,
-    `This will make you the leader at <strong>${fmtM(amount)}</strong>. The timer will reset to ${settingsData.overbidTimerHours||18} hours.`,
-    async () => {
-      const timerMs = (settingsData.overbidTimerHours||18) * 3600000;
-      const prevLeader = a.leader;
-      const prevBid = a.currentBid || 0;
-
-      // Check if prev leader has a blind bid that beats this
-      let finalAmount = amount;
-      let finalLeader = currentTeam;
-      if (prevLeader && a.blindBids && a.blindBids[prevLeader] > amount) {
-        const blindMax = a.blindBids[prevLeader];
-        finalAmount = Math.min(blindMax, amount + INCREMENT);
-        finalLeader = prevLeader;
-        showToast(`Outbid! ${TEAMS[prevLeader]?.owner||prevLeader}'s blind bid auto-countered.`);
-      }
-
-      const bidsUpdate = {};
-      bidsUpdate[`auctions/${auctionId}/currentBid`] = finalAmount;
-      bidsUpdate[`auctions/${auctionId}/leader`]     = finalLeader;
-      bidsUpdate[`auctions/${auctionId}/expiresAt`]  = Date.now() + timerMs;
-      bidsUpdate[`auctions/${auctionId}/bids/${Date.now()}`] = {
-        team: currentTeam, amount, timestamp: Date.now(), resultAmount: finalAmount, resultLeader: finalLeader
-      };
-      await update(ref(db), bidsUpdate);
-      if (finalLeader === currentTeam) showToast(`Bid placed — you're winning at ${fmtM(finalAmount)}!`);
-    }, false
-  );
+  if (!confirm("Bid " + fmtM(amount) + " on " + a.playerName + "?")) return;
+  const timerMs = (settingsData.overbidTimerHours||18) * 3600000;
+  let finalAmount = amount;
+  let finalLeader = currentTeam;
+  if (a.leader && a.blindBids && a.blindBids[a.leader] > amount) {
+    finalAmount = Math.min(a.blindBids[a.leader], amount + INCREMENT);
+    finalLeader = a.leader;
+  }
+  const updates = {};
+  updates["auctions/" + auctionId + "/currentBid"] = finalAmount;
+  updates["auctions/" + auctionId + "/leader"]     = finalLeader;
+  updates["auctions/" + auctionId + "/expiresAt"]  = Date.now() + timerMs;
+  updates["auctions/" + auctionId + "/bids/" + Date.now()] = {
+    team: currentTeam, amount: amount, timestamp: Date.now()
+  };
+  db.ref().update(updates).then(function() {
+    if (finalLeader === currentTeam) showToast("Bid placed — you're winning at " + fmtM(finalAmount) + "!");
+    else showToast("Outbid! " + (TEAMS[finalLeader]?.owner||finalLeader) + "'s blind bid auto-countered.");
+  }).catch(function(e) { alert("Error: " + e.message); });
 };
 
 window.setBlind = function(auctionId) {
-  const input = document.getElementById(`blind-input-${auctionId}`);
-  const val = parseMoney(input?.value||"");
+  const input = document.getElementById("blind-input-" + auctionId);
+  const val = parseMoney(input ? input.value : "");
   if (!val || val < MIN_BID) { showToast("Enter a valid blind max (minimum $1M)."); return; }
   const a = auctionData[auctionId];
-  openModal(
-    `Set blind max of ${fmtM(val)} on ${a?.playerName}?`,
-    `The system will automatically bid for you up to <strong>${fmtM(val)}</strong> in $250K increments whenever you're outbid.`,
-    async () => {
-      await update(ref(db, `auctions/${auctionId}/blindBids`), { [currentTeam]: val });
-      // If not currently leading, place a bid now
-      if (a && a.leader !== currentTeam) {
-        const nextBid = (a.currentBid||MIN_BID) + INCREMENT;
-        if (val >= nextBid) {
-          await update(ref(db), {
-            [`auctions/${auctionId}/currentBid`]: nextBid,
-            [`auctions/${auctionId}/leader`]: currentTeam,
-            [`auctions/${auctionId}/expiresAt`]: Date.now() + (settingsData.overbidTimerHours||18)*3600000,
-          });
-          showToast(`Blind set — you're now winning at ${fmtM(nextBid)}!`);
-        } else {
-          showToast(`Blind set at ${fmtM(val)}. You need to bid manually first.`);
-        }
+  if (!confirm("Set blind max of " + fmtM(val) + " on " + (a ? a.playerName : "this player") + "?")) return;
+  db.ref("auctions/" + auctionId + "/blindBids").update({ [currentTeam]: val }).then(function() {
+    if (a && a.leader !== currentTeam) {
+      const nextBid = (a.currentBid || MIN_BID) + INCREMENT;
+      if (val >= nextBid) {
+        const updates = {};
+        updates["auctions/" + auctionId + "/currentBid"] = nextBid;
+        updates["auctions/" + auctionId + "/leader"]     = currentTeam;
+        updates["auctions/" + auctionId + "/expiresAt"]  = Date.now() + (settingsData.overbidTimerHours||18)*3600000;
+        db.ref().update(updates);
+        showToast("Blind set — you're now winning at " + fmtM(nextBid) + "!");
       } else {
-        showToast(`Blind max updated to ${fmtM(val)}.`);
+        showToast("Blind set at " + fmtM(val) + ". Current bid is higher — bid manually first.");
       }
-      if (input) input.value = "";
-    }, false
-  );
+    } else {
+      showToast("Blind max updated to " + fmtM(val) + ".");
+    }
+    if (input) input.value = "";
+  }).catch(function(e) { alert("Error: " + e.message); });
 };
 
 window.openBlindModal = function(id) {
@@ -856,14 +844,10 @@ window.confirmBlind = function() {
 
 // ── Opt-out ──
 window.confirmOptOut = function() {
-  openModal(
-    "End your auction?",
-    "You'll no longer be able to place bids or nominations. You can still watch the auction. The commissioner can undo this if needed.",
-    async () => {
-      await update(ref(db, `teams/${currentTeam}`), { optedOut: true });
-      showToast("You've opted out of the auction.");
-    }, true
-  );
+  if (!confirm("End your auction? You'll no longer be able to bid or nominate. Commissioner can undo this.")) return;
+  db.ref("teams/" + currentTeam).update({ optedOut: true }).then(function() {
+    showToast("You've opted out of the auction.");
+  });
 };
 
 // ── Commissioner actions ──
@@ -908,85 +892,75 @@ function populateCommissioner() {
   if (sm) sm.value = settingsData.minBid || 1000000;
 }
 
-window.saveTimers = async function() {
-  await update(ref(db, "settings"), {
+window.saveTimers = function() {
+  db.ref("settings").update({
     initialTimerHours: parseFloat(document.getElementById("s-timer-initial").value)||18,
     overbidTimerHours: parseFloat(document.getElementById("s-timer-overbid").value)||18,
     increment: parseMoney(document.getElementById("s-increment").value)||250000,
     minBid: parseMoney(document.getElementById("s-min-bid").value)||1000000,
-  });
-  showToast("Timer settings saved.");
+  }).then(function() { showToast("Timer settings saved."); });
 };
 
-window.saveCapSpace = async function() {
+window.saveCapSpace = function() {
   const team = document.getElementById("s-cap-team").value;
   const val  = parseMoney(document.getElementById("s-cap-value").value);
-  if (!team||!val) { showToast("Select a team and enter a value."); return; }
-  await update(ref(db, `teams/${team}`), { capSpace: val });
-  showToast(`${TEAMS[team]?.name} cap space updated to ${fmtM(val)}.`);
+  if (!team || !val) { showToast("Select a team and enter a value."); return; }
+  db.ref("teams/" + team).update({ capSpace: val })
+    .then(function() { showToast((TEAMS[team]?.name||team) + " cap space updated to " + fmtM(val) + "."); });
 };
 
-window.commCancelBid = async function() {
+window.commCancelBid = function() {
   const id = document.getElementById("s-cancel-bid-sel").value;
   if (!id) { showToast("Select an auction."); return; }
-  const a = auctionData[id];
-  openModal("Cancel winning bid?",
-    `This will remove <strong>${TEAMS[a?.leader]?.owner||"?"}'s</strong> bid of ${fmtM(a?.currentBid)} on ${a?.playerName}. Bidding reopens but timer does not reset.`,
-    async () => {
-      await update(ref(db, `auctions/${id}`), { leader: null, currentBid: MIN_BID });
-      showToast("Bid cancelled. Auction reopened.");
-    }, true);
+  if (!confirm("Cancel the current winning bid? This reopens bidding.")) return;
+  db.ref("auctions/" + id).update({ leader: null, currentBid: 1000000 })
+    .then(function() { showToast("Bid cancelled. Auction reopened."); });
 };
 
-window.commRemoveNom = async function() {
+window.commRemoveNom = function() {
   const id = document.getElementById("s-remove-nom-sel").value;
   if (!id) { showToast("Select an auction."); return; }
   const a = auctionData[id];
-  openModal("Remove nomination?",
-    `This will permanently remove <strong>${a?.playerName}</strong> from the auction. The nomination slot will be returned to ${TEAMS[a?.nominatedBy]?.owner||"the team"}.`,
-    async () => {
-      await update(ref(db, `auctions/${id}`), { status: "removed" });
-      if (a?.nominatedBy) await update(ref(db, `teams/${a.nominatedBy}`), { nominationUsed: false });
-      showToast("Nomination removed.");
-    }, true);
+  if (!confirm("Remove " + (a ? a.playerName : "this nomination") + " from auction?")) return;
+  db.ref("auctions/" + id).update({ status: "removed" }).then(function() {
+    if (a && a.nominatedBy) db.ref("teams/" + a.nominatedBy).update({ nominationUsed: false });
+    showToast("Nomination removed.");
+  });
 };
 
-window.commResetSlot = async function() {
+window.commResetSlot = function() {
   const team = document.getElementById("s-reset-slot-sel").value;
   if (!team) { showToast("Select a team."); return; }
-  await update(ref(db, `teams/${team}`), { nominationUsed: false });
-  showToast(`${TEAMS[team]?.name} nomination slot reset.`);
+  db.ref("teams/" + team).update({ nominationUsed: false })
+    .then(function() { showToast((TEAMS[team]?.name||team) + " nomination slot reset."); });
 };
 
-window.commUndoOptOut = async function() {
+window.commUndoOptOut = function() {
   const team = document.getElementById("s-undo-optout-sel").value;
   if (!team) { showToast("Select a team."); return; }
-  await update(ref(db, `teams/${team}`), { optedOut: false });
-  showToast(`${TEAMS[team]?.name} opt-out reversed.`);
+  db.ref("teams/" + team).update({ optedOut: false })
+    .then(function() { showToast((TEAMS[team]?.name||team) + " opt-out reversed."); });
 };
 
-window.commForceClose = async function() {
+window.commForceClose = function() {
   const id = document.getElementById("s-force-close-sel").value;
   if (!id) { showToast("Select an auction."); return; }
   const a = auctionData[id];
-  if (!a?.leader) { showToast("No current leader — cannot force close."); return; }
-  openModal("Force close auction?",
-    `Award <strong>${a.playerName}</strong> to ${TEAMS[a.leader]?.owner||a.leader} at <strong>${fmtM(a.currentBid)}</strong>?`,
-    async () => {
-      await update(ref(db, `auctions/${id}`), {
-        status: "sold", winner: a.leader, finalBid: a.currentBid, closedAt: Date.now()
-      });
+  if (!a || !a.leader) { showToast("No current leader — cannot force close."); return; }
+  if (!confirm("Award " + a.playerName + " to " + (TEAMS[a.leader]?.owner||a.leader) + " at " + fmtM(a.currentBid) + "?")) return;
+  db.ref("auctions/" + id).update({ status:"sold", winner:a.leader, finalBid:a.currentBid, closedAt:Date.now() })
+    .then(function() {
       const td = teamData[a.leader] || {};
       const prevCap = td.capSpace !== undefined ? td.capSpace : getDefaultCap(a.leader);
-      await update(ref(db, `teams/${a.leader}`), { capSpace: prevCap - a.currentBid });
-      showToast(`${a.playerName} awarded to ${TEAMS[a.leader]?.name}.`);
-    }, true);
+      db.ref("teams/" + a.leader).update({ capSpace: prevCap - a.currentBid });
+      showToast(a.playerName + " awarded to " + (TEAMS[a.leader]?.name||a.leader) + ".");
+    });
 };
 
-window.commTogglePause = async function() {
+window.commTogglePause = function() {
   const isPaused = settingsData.paused;
-  await update(ref(db, "settings"), { paused: !isPaused });
-  showToast(isPaused ? "Auctions resumed." : "All auctions paused.");
+  db.ref("settings").update({ paused: !isPaused })
+    .then(function() { showToast(isPaused ? "Auctions resumed." : "All auctions paused."); });
 };
 
 window.commViewHistory = function() {
@@ -1067,24 +1041,22 @@ window.toggleCap = function() {
 };
 
 // ── Check for expired auctions every 60s ──
-setInterval(async () => {
+setInterval(function() {
   if (!currentTeam) return;
   const now = Date.now();
-  for (const [id, a] of Object.entries(auctionData)) {
-    if (a.status === "active" && a.expiresAt <= now && !settingsData.paused) {
-      if (a.leader) {
-        const updates = {};
-        updates[`auctions/${id}/status`]   = "sold";
-        updates[`auctions/${id}/winner`]   = a.leader;
-        updates[`auctions/${id}/finalBid`] = a.currentBid;
-        updates[`auctions/${id}/closedAt`] = now;
-        const td = teamData[a.leader] || {};
-        const prevCap = td.capSpace !== undefined ? td.capSpace : getDefaultCap(a.leader);
-        updates[`teams/${a.leader}/capSpace`] = prevCap - a.currentBid;
-        await update(ref(db), updates);
-      }
+  Object.entries(auctionData).forEach(function([id, a]) {
+    if (a.status === "active" && a.expiresAt <= now && !settingsData.paused && a.leader) {
+      var td = teamData[a.leader] || {};
+      var prevCap = td.capSpace !== undefined ? td.capSpace : getDefaultCap(a.leader);
+      var updates = {};
+      updates["auctions/" + id + "/status"]   = "sold";
+      updates["auctions/" + id + "/winner"]   = a.leader;
+      updates["auctions/" + id + "/finalBid"] = a.currentBid;
+      updates["auctions/" + id + "/closedAt"] = now;
+      updates["teams/" + a.leader + "/capSpace"] = prevCap - a.currentBid;
+      db.ref().update(updates);
     }
-  }
+  });
 }, 60000);
 
 </script>
