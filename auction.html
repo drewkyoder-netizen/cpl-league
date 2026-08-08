@@ -3,686 +3,483 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPL Auction Room · 2026</title>
+<title>CPL Auction Room 2026</title>
 <style>
-/* ── Reset & base ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #f5f5f3; --bg2: #ededea; --bg3: #e4e4e0;
-  --surface: #ffffff; --border: rgba(0,0,0,.1); --border2: rgba(0,0,0,.16);
-  --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
-  --good: #3b6d11; --good-bg: #eaf3de; --good-border: #639922;
-  --danger: #c8102e; --danger-bg: #fff5f5; --danger-border: #e24b4a;
-  --accent: #185fa5; --accent-bg: #e6f1fb; --accent-border: #378add;
-  --warn: #ba7517;
-  --radius: 8px; --radius-lg: 12px;
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f3;--surface:#fff;--border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.18);
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#888780;
+  --good:#3b6d11;--good-bg:#eaf3de;--good-border:#639922;
+  --danger:#c8102e;--danger-bg:#fff5f5;--danger-border:#e24b4a;
+  --accent:#185fa5;--accent-bg:#e6f1fb;--accent-border:#378add;
+  --radius:8px;--radius-lg:12px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
 }
-body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
-
-/* ── Screens ── */
-.screen { display: none; }
-.screen.active { display: flex; flex-direction: column; min-height: 100vh; }
-
-/* ── Login ── */
-.login-page { align-items: center; justify-content: center; padding: 2rem 1rem; }
-.login-card { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 16px; padding: 2rem; width: 100%; max-width: 360px; }
-.login-logo { font-size: 24px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
-.login-sub { font-size: 13px; color: var(--text3); margin-bottom: 1.75rem; }
-.login-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; display: block; }
-.login-select { width: 100%; padding: 10px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 14px; font-family: var(--font); background: var(--surface); color: var(--text); margin-bottom: 1rem; appearance: none; cursor: pointer; }
-.login-btn { width: 100%; background: var(--text); color: #fff; border: none; border-radius: var(--radius); padding: 11px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font); transition: opacity .15s; }
-.login-btn:hover { opacity: .85; }
-.login-note { font-size: 11px; color: var(--text3); text-align: center; margin-top: .75rem; }
-
-/* ── App layout ── */
-.app-page { flex-direction: column; }
-.app-header { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 10px 1rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
-.app-title { font-size: 15px; font-weight: 600; color: var(--text); }
-.app-header-right { display: flex; align-items: center; gap: 10px; }
-.user-chip { display: flex; align-items: center; gap: 7px; background: var(--bg); border: 0.5px solid var(--border2); border-radius: 20px; padding: 4px 12px 4px 5px; font-size: 12px; color: var(--text2); }
-.user-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: #fff; flex-shrink: 0; }
-.switch-link { font-size: 11px; color: var(--text3); background: none; border: none; cursor: pointer; font-family: var(--font); text-decoration: underline; }
-
-/* ── Nav tabs ── */
-.nav-tabs { background: var(--surface); border-bottom: 0.5px solid var(--border); display: flex; overflow-x: auto; flex-shrink: 0; }
-.nav-tab { padding: 10px 16px; font-size: 13px; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; font-family: var(--font); transition: color .12s; }
-.nav-tab:hover { color: var(--text); }
-.nav-tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
-
-/* ── Main content ── */
-.main { flex: 1; padding: .85rem; max-width: 860px; width: 100%; margin: 0 auto; }
-
-/* ── Cap panel ── */
-.cap-panel { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: .85rem; overflow: hidden; }
-.cap-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 0.5px solid var(--border); cursor: pointer; user-select: none; }
-.cap-header-title { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; }
-.cap-toggle { font-size: 10px; color: var(--text3); }
-.cap-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--border); }
-.cap-cell { background: var(--surface); padding: 7px 6px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.cap-logo { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 600; color: #fff; flex-shrink: 0; background: #888; }
-.cap-logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: contain; background: #fff; }
-.cap-val { font-size: 11px; font-weight: 500; color: var(--text); }
-.cap-val.low { color: var(--danger); }
-.cap-badge { font-size: 8px; padding: 1px 5px; border-radius: 3px; font-weight: 600; line-height: 1.4; }
-.cap-badge.nom { background: #d1fae5; color: #065f46; }
-.cap-badge.done { background: #fee2e2; color: #991b1b; }
-.cap-spacer { height: 14px; }
-
-/* ── Opt-out bar ── */
-.opt-out-bar { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .65rem 1rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: .85rem; }
-.opt-out-text { font-size: 12px; color: var(--text2); }
-.opt-out-btn { background: var(--danger-bg); border: 0.5px solid var(--danger-border); border-radius: var(--radius); padding: 5px 14px; font-size: 12px; color: var(--danger); cursor: pointer; font-family: var(--font); }
-.opted-out-notice { background: #fff3cd; border: 0.5px solid #ffc107; border-radius: var(--radius-lg); padding: .65rem 1rem; font-size: 12px; color: #856404; margin-bottom: .85rem; text-align: center; }
-
-/* ── Section label ── */
-.sec-lbl { font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
-
-/* ── Auction cards ── */
-.cards { display: flex; flex-direction: column; gap: 8px; }
-.a-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .9rem; }
-.a-card.closing { border-color: var(--danger); border-width: 1.5px; }
-.a-card.winning { border-color: var(--good-border); border-width: 1.5px; }
-.a-card.opted-out-card { opacity: .55; pointer-events: none; }
-.a-inner { display: grid; grid-template-columns: 1fr 48px 154px; gap: 12px; align-items: center; }
-.a-name { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
-.a-pos { display: inline-block; font-size: 10px; background: var(--bg2); color: var(--text2); border-radius: 4px; padding: 1px 6px; vertical-align: middle; margin-left: 4px; }
-.a-stats { display: flex; gap: 16px; margin-top: 6px; }
-.a-stat-lbl { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
-.a-stat-val { font-size: 18px; font-weight: 600; color: var(--text); line-height: 1.1; }
-.a-stat-val.urgent { color: var(--danger); }
-.a-stat-val.ok { color: var(--good); }
-.a-leader-logo { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; flex-shrink: 0; background: #888; }
-.a-leader-logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: contain; background: #fff; }
-.a-leader-logo.you { outline: 2.5px solid var(--good-border); outline-offset: 2px; }
-.a-btns { display: flex; flex-direction: column; gap: 5px; }
-.abtn { width: 100%; border-radius: 6px; padding: 7px 8px; font-size: 11px; cursor: pointer; font-family: var(--font); text-align: center; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); line-height: 1.3; transition: opacity .12s; }
-.abtn:hover { opacity: .85; }
-.abtn.primary { background: var(--text); color: #fff; border-color: var(--text); }
-.abtn.blind-active { background: var(--good-bg); border-color: var(--good-border); color: var(--good); cursor: default; }
-.abtn.blind-active:hover { opacity: 1; }
-.abtn.winning-no-blind { background: var(--good-bg); border-color: var(--good-border); color: var(--good); }
-.a-blind-row { display: flex; gap: 3px; }
-.a-blind-input { flex: 1; padding: 5px 6px; border: 0.5px solid var(--border2); border-radius: 5px; font-size: 10px; font-family: var(--font); min-width: 0; background: var(--surface); color: var(--text); }
-.a-blind-btn { background: var(--accent-bg); border: 0.5px solid var(--accent-border); border-radius: 5px; padding: 5px 7px; font-size: 10px; color: var(--accent); cursor: pointer; font-family: var(--font); white-space: nowrap; }
-.empty-state { text-align: center; padding: 2rem 1rem; color: var(--text3); font-size: 13px; }
-
-/* ── Nominate tab ── */
-.nom-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-.nom-search { padding: .75rem; border-bottom: 0.5px solid var(--border); }
-.nom-search input { width: 100%; padding: 9px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 13px; font-family: var(--font); background: var(--surface); color: var(--text); }
-.nom-pos-tabs { display: flex; border-bottom: 0.5px solid var(--border); padding: 0 .75rem; overflow-x: auto; }
-.nom-pos-tab { font-size: 12px; color: var(--text3); padding: 7px 10px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
-.nom-pos-tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
-.nom-list { padding: .25rem .75rem; max-height: 400px; overflow-y: auto; }
-.nom-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-top: 0.5px solid var(--bg2); gap: 8px; }
-.nom-row:first-child { border-top: none; }
-.nom-pname { font-size: 13px; font-weight: 500; color: var(--text); }
-.nom-pmeta { font-size: 11px; color: var(--text3); }
-.nom-add-btn { background: var(--text); color: #fff; border: none; border-radius: 6px; padding: 5px 14px; font-size: 12px; cursor: pointer; font-family: var(--font); white-space: nowrap; flex-shrink: 0; }
-.nom-add-btn:disabled { background: var(--bg3); color: var(--text3); cursor: default; }
-.nom-footer { font-size: 11px; color: var(--text3); padding: .65rem .75rem; border-top: 0.5px solid var(--border); background: var(--bg); }
-.nom-empty { padding: 1.5rem; text-align: center; color: var(--text3); font-size: 13px; }
-
-/* ── Sold tab ── */
-.sold-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-.sold-header { display: grid; grid-template-columns: 1fr 36px 90px; gap: 10px; padding: 7px 12px; border-bottom: 0.5px solid var(--border); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
-.sold-row { display: grid; grid-template-columns: 1fr 36px 90px; gap: 10px; padding: 9px 12px; border-top: 0.5px solid var(--bg2); align-items: center; font-size: 13px; }
-.sold-logo { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #fff; background: #888; }
-.sold-logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: contain; background: #fff; }
-.sold-price { font-weight: 600; color: var(--text); text-align: right; }
-
-/* ── Commissioner tab ── */
-.settings-section { display: flex; flex-direction: column; gap: 8px; }
-.settings-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .9rem; }
-.settings-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: .65rem; padding-bottom: .5rem; border-bottom: 0.5px solid var(--border); }
-.s-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 0.5px solid var(--bg2); font-size: 13px; gap: 10px; }
-.s-row:first-of-type { border-top: none; }
-.s-label { color: var(--text2); flex: 1; font-size: 12px; }
-.s-hint { font-size: 10px; color: var(--text3); margin-top: -4px; padding-bottom: 4px; }
-.s-input { width: 90px; padding: 5px 8px; border: 0.5px solid var(--border2); border-radius: 6px; font-size: 12px; font-family: var(--font); text-align: right; background: var(--surface); color: var(--text); }
-.s-select { padding: 5px 8px; border: 0.5px solid var(--border2); border-radius: 6px; font-size: 12px; font-family: var(--font); background: var(--surface); color: var(--text); max-width: 200px; flex: 1; }
-.s-btn { background: var(--bg); border: 0.5px solid var(--border2); border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: var(--font); color: var(--text); white-space: nowrap; }
-.s-btn:hover { background: var(--bg2); }
-.s-btn.danger { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger); }
-.s-btn.save { background: var(--text); color: #fff; border-color: var(--text); }
-
-/* ── Confirm modal ── */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
-.modal-overlay.open { display: flex; }
-.modal { background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 340px; width: 100%; }
-.modal-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: .5rem; }
-.modal-body { font-size: 13px; color: var(--text2); margin-bottom: 1.25rem; line-height: 1.5; }
-.modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
-.modal-cancel { background: var(--bg); border: 0.5px solid var(--border2); border-radius: 6px; padding: 7px 16px; font-size: 13px; cursor: pointer; font-family: var(--font); color: var(--text); }
-.modal-confirm { background: var(--text); color: #fff; border: none; border-radius: 6px; padding: 7px 16px; font-size: 13px; cursor: pointer; font-family: var(--font); }
-.modal-confirm.danger { background: var(--danger); }
-
-/* ── Toast ── */
-.toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; border-radius: 20px; padding: 8px 20px; font-size: 13px; z-index: 300; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
-.toast.show { opacity: 1; }
-
-/* ── Mobile ── */
-@media (max-width: 600px) {
-  .a-inner { grid-template-columns: 1fr 42px 130px; gap: 8px; }
-  .a-name { font-size: 16px; }
-  .a-stat-val { font-size: 16px; }
-  .a-leader-logo { width: 42px; height: 42px; font-size: 11px; }
-  .cap-grid { grid-template-columns: repeat(4, 1fr); }
-  .main { padding: .65rem; }
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+.screen{display:none}.screen.active{display:flex;flex-direction:column;min-height:100vh}
+/* Login */
+.login-page{align-items:center;justify-content:center;padding:2rem 1rem}
+.login-card{background:var(--surface);border:0.5px solid var(--border2);border-radius:16px;padding:2rem;width:100%;max-width:360px}
+.login-logo{font-size:22px;font-weight:600;margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--text3);margin-bottom:1.5rem}
+.login-label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block}
+.login-select{width:100%;padding:10px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:14px;font-family:var(--font);background:var(--surface);color:var(--text);margin-bottom:1rem;appearance:none}
+.login-btn{width:100%;background:var(--text);color:#fff;border:none;border-radius:var(--radius);padding:11px;font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font)}
+.login-note{font-size:11px;color:var(--text3);text-align:center;margin-top:.75rem}
+/* App header */
+.app-header{background:var(--surface);border-bottom:0.5px solid var(--border);padding:10px 1rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.app-title{font-size:15px;font-weight:600}
+.user-chip{display:flex;align-items:center;gap:7px;background:var(--bg);border:0.5px solid var(--border2);border-radius:20px;padding:4px 12px 4px 5px;font-size:12px;color:var(--text2)}
+.udot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;flex-shrink:0}
+.switch-btn{font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;font-family:var(--font);text-decoration:underline;margin-left:4px}
+/* Nav tabs */
+.nav-tabs{background:var(--surface);border-bottom:0.5px solid var(--border);display:flex;overflow-x:auto;flex-shrink:0}
+.nav-tab{padding:10px 16px;font-size:13px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font)}
+.nav-tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500}
+/* Main */
+.main{flex:1;padding:.85rem;max-width:860px;width:100%;margin:0 auto}
+/* Cap panel */
+.cap-panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);margin-bottom:.85rem;overflow:hidden}
+.cap-ph{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:0.5px solid var(--border);cursor:pointer;user-select:none}
+.cap-ph-title{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.cap-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border)}
+.cap-cell{background:var(--surface);padding:7px 5px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.cap-logo-wrap{width:24px;height:24px;border-radius:50%;overflow:hidden;background:#fff;flex-shrink:0}
+.cap-logo-wrap img{width:100%;height:100%;object-fit:contain}
+.cap-logo-fb{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:#fff}
+.cap-val{font-size:11px;font-weight:500;color:var(--text)}
+.cap-val.low{color:var(--danger)}
+.cap-badge{font-size:8px;padding:1px 5px;border-radius:3px;font-weight:600}
+.cap-badge.nom{background:#d1fae5;color:#065f46}
+.cap-badge.done{background:#fee2e2;color:#991b1b}
+.cap-spacer{height:14px}
+/* Opt-out bar */
+.opt-out-bar{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem}
+.opt-out-btn{background:var(--danger-bg);border:0.5px solid var(--danger-border);border-radius:var(--radius);padding:5px 14px;font-size:12px;color:var(--danger);cursor:pointer;font-family:var(--font)}
+.opted-notice{background:#fff3cd;border:0.5px solid #ffc107;border-radius:var(--radius-lg);padding:.65rem 1rem;font-size:12px;color:#856404;margin-bottom:.85rem;text-align:center}
+/* Section label */
+.sec-lbl{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem}
+/* Auction cards */
+.cards{display:flex;flex-direction:column;gap:8px}
+.a-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.9rem}
+.a-card.closing{border-color:var(--danger);border-width:1.5px}
+.a-card.winning{border-color:var(--good-border);border-width:1.5px}
+.a-inner{display:grid;grid-template-columns:1fr 48px 154px;gap:12px;align-items:center}
+.a-name{font-size:18px;font-weight:600;color:var(--text);margin-bottom:3px}
+.a-pos{display:inline-block;font-size:10px;background:#f0f0ec;color:var(--text2);border-radius:4px;padding:1px 6px;vertical-align:middle;margin-left:4px}
+.a-stats{display:flex;gap:16px;margin-top:6px}
+.a-sl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.a-sv{font-size:18px;font-weight:600;color:var(--text);line-height:1.1}
+.a-sv.urgent{color:var(--danger)}
+.a-sv.ok{color:var(--good)}
+.a-leader{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0;overflow:hidden;background:#888}
+.a-leader img{width:100%;height:100%;object-fit:contain;background:#fff}
+.a-leader.you{outline:2.5px solid var(--good-border);outline-offset:2px}
+.a-btns{display:flex;flex-direction:column;gap:5px}
+.abtn{width:100%;border-radius:6px;padding:7px 8px;font-size:11px;cursor:pointer;font-family:var(--font);text-align:center;border:0.5px solid var(--border2);background:var(--bg);color:var(--text);line-height:1.3}
+.abtn.primary{background:var(--text);color:#fff;border-color:var(--text)}
+.abtn.blind-active{background:var(--good-bg);border-color:var(--good-border);color:var(--good);cursor:default}
+.abtn.winning-nb{background:var(--good-bg);border-color:var(--good-border);color:var(--good)}
+.blind-row{display:flex;gap:3px}
+.blind-input{flex:1;padding:5px 6px;border:0.5px solid var(--border2);border-radius:5px;font-size:10px;font-family:var(--font);min-width:0;background:var(--surface);color:var(--text)}
+.blind-btn{background:var(--accent-bg);border:0.5px solid var(--accent-border);border-radius:5px;padding:5px 7px;font-size:10px;color:var(--accent);cursor:pointer;font-family:var(--font);white-space:nowrap}
+.empty-state{text-align:center;padding:2rem 1rem;color:var(--text3);font-size:13px}
+/* Nominate */
+.nom-wrap{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.nom-search{padding:.75rem;border-bottom:0.5px solid var(--border)}
+.nom-search input{width:100%;padding:9px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--surface);color:var(--text)}
+.nom-pos-tabs{display:flex;border-bottom:0.5px solid var(--border);padding:0 .75rem;overflow-x:auto}
+.nom-pos-tab{font-size:12px;color:var(--text3);padding:7px 10px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.nom-pos-tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500}
+.nom-list{padding:.25rem .75rem;max-height:400px;overflow-y:auto}
+.nom-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-top:0.5px solid #f5f5f3;gap:8px}
+.nom-row:first-child{border-top:none}
+.nom-pname{font-size:13px;font-weight:500;color:var(--text)}
+.nom-pmeta{font-size:11px;color:var(--text3)}
+.nom-btn{background:var(--text);color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-family:var(--font);white-space:nowrap;flex-shrink:0}
+.nom-btn:disabled{background:#ccc;cursor:default}
+.nom-footer{font-size:11px;color:var(--text3);padding:.65rem .75rem;border-top:0.5px solid var(--border);background:var(--bg)}
+/* Sold */
+.sold-wrap{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.sold-hdr{display:grid;grid-template-columns:1fr 36px 90px;gap:10px;padding:7px 12px;border-bottom:0.5px solid var(--border);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.sold-row{display:grid;grid-template-columns:1fr 36px 90px;gap:10px;padding:9px 12px;border-top:0.5px solid #f5f5f3;align-items:center;font-size:13px}
+.sold-logo{width:32px;height:32px;border-radius:50%;overflow:hidden;background:#888;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff}
+.sold-logo img{width:100%;height:100%;object-fit:contain;background:#fff}
+.sold-price{font-weight:600;text-align:right}
+/* Settings */
+.settings-wrap{display:flex;flex-direction:column;gap:8px}
+.s-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.9rem}
+.s-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:.65rem;padding-bottom:.5rem;border-bottom:0.5px solid var(--border)}
+.s-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:0.5px solid #f8f8f6;font-size:12px;gap:8px}
+.s-row:first-of-type{border-top:none}
+.s-label{color:var(--text2);flex:1;font-size:12px}
+.s-hint{font-size:10px;color:var(--text3);margin-top:-2px;padding-bottom:3px}
+.s-input{width:90px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:6px;font-size:12px;font-family:var(--font);text-align:right;background:var(--surface);color:var(--text)}
+.s-select{padding:5px 8px;border:0.5px solid var(--border2);border-radius:6px;font-size:12px;font-family:var(--font);background:var(--surface);color:var(--text);max-width:210px;flex:1}
+.s-btn{background:var(--bg);border:0.5px solid var(--border2);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:var(--font);color:var(--text);white-space:nowrap}
+.s-btn.save{background:var(--text);color:#fff;border-color:var(--text)}
+.s-btn.danger{background:var(--danger-bg);border-color:var(--danger-border);color:var(--danger)}
+/* History log */
+.hist-log{margin-top:.5rem;font-size:12px;color:var(--text2);max-height:200px;overflow-y:auto}
+.hist-entry{padding:4px 0;border-top:0.5px solid var(--border)}
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;border-radius:20px;padding:8px 20px;font-size:13px;z-index:300;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+/* Mobile */
+@media(max-width:600px){
+  .a-inner{grid-template-columns:1fr 40px 130px;gap:8px}
+  .a-name{font-size:15px}
+  .a-sv{font-size:15px}
+  .a-leader{width:40px;height:40px;font-size:11px}
+  .cap-grid{grid-template-columns:repeat(4,1fr)}
+  .main{padding:.65rem}
 }
 </style>
 </head>
 <body>
 
-<!-- ── Login Screen ── -->
 <div id="screen-login" class="screen active login-page">
   <div class="login-card">
     <div class="login-logo">⚾ CPL Auction</div>
-    <div class="login-sub">2026 offseason · slow auction room</div>
+    <div class="login-sub">2026 offseason &middot; slow auction room</div>
     <label class="login-label">Select your team</label>
-    <select class="login-select" id="login-team-select">
+    <select class="login-select" id="login-sel">
       <option value="">— choose a team —</option>
-      <option value="CHC">Chicago Cubs · Drew Yoder</option>
-      <option value="CIN">Cincinnati Reds · Sean Wasserman</option>
-      <option value="BAL">Baltimore Orioles · David Cortez</option>
-      <option value="KC">Kansas City Royals · Jon Gelber</option>
-      <option value="SEA">Seattle Mariners · Dirk Adkinson</option>
-      <option value="LAD">Los Angeles Dodgers · David Fatoki</option>
-      <option value="LAA">Los Angeles Angels · Kirk Lacob</option>
-      <option value="TEX">Texas Rangers · Jake Gavlick</option>
-      <option value="MIL">Milwaukee Brewers · Jason Stein</option>
-      <option value="LV">Las Vegas A's · Chris Poulson</option>
-      <option value="SD">San Diego Padres · Bert Ortiz</option>
-      <option value="SF">San Francisco Giants · Mac Osborn</option>
+      <option value="CHC">Chicago Cubs &middot; Drew Yoder</option>
+      <option value="CIN">Cincinnati Reds &middot; Sean Wasserman</option>
+      <option value="BAL">Baltimore Orioles &middot; David Cortez</option>
+      <option value="KC">Kansas City Royals &middot; Jon Gelber</option>
+      <option value="SEA">Seattle Mariners &middot; Dirk Adkinson</option>
+      <option value="LAD">Los Angeles Dodgers &middot; David Fatoki</option>
+      <option value="LAA">Los Angeles Angels &middot; Kirk Lacob</option>
+      <option value="TEX">Texas Rangers &middot; Jake Gavlick</option>
+      <option value="MIL">Milwaukee Brewers &middot; Jason Stein</option>
+      <option value="LV">Las Vegas A's &middot; Chris Poulson</option>
+      <option value="SD">San Diego Padres &middot; Bert Ortiz</option>
+      <option value="SF">San Francisco Giants &middot; Mac Osborn</option>
     </select>
     <button class="login-btn" onclick="doLogin()">Enter auction room</button>
-    <div class="login-note">Test mode — no password required</div>
+    <div class="login-note">Test mode &mdash; no password required</div>
   </div>
 </div>
 
-<!-- ── App Screen ── -->
 <div id="screen-app" class="screen app-page">
   <div class="app-header">
-    <div class="app-title">⚾ CPL Auction · 2026</div>
-    <div class="app-header-right">
+    <div class="app-title">&#9918; CPL Auction &middot; 2026</div>
+    <div style="display:flex;align-items:center;gap:8px">
       <div class="user-chip">
-        <div class="user-dot" id="user-dot"></div>
-        <span id="user-label"></span>
+        <div class="udot" id="udot"></div>
+        <span id="ulabel"></span>
       </div>
-      <button class="switch-link" onclick="switchTeam()">switch team</button>
+      <button class="switch-btn" onclick="doSwitchTeam()">switch team</button>
     </div>
   </div>
-
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showTab('live')">Live auctions</button>
     <button class="nav-tab" onclick="showTab('nominate')">Nominate</button>
     <button class="nav-tab" onclick="showTab('sold')">Sold</button>
-    <button class="nav-tab" id="commissioner-tab" style="display:none" onclick="showTab('commissioner')">⚙ Commissioner</button>
+    <button class="nav-tab" id="comm-tab" style="display:none" onclick="showTab('commissioner')">Commissioner</button>
   </div>
-
   <div class="main">
-
-    <!-- Live tab -->
     <div id="tab-live">
       <div class="cap-panel">
-        <div class="cap-header" onclick="toggleCap()">
-          <span class="cap-header-title">Cap space &amp; nominations</span>
-          <span class="cap-toggle" id="cap-toggle-lbl">▲ collapse</span>
+        <div class="cap-ph" onclick="toggleCap()">
+          <span class="cap-ph-title">Cap space &amp; nominations</span>
+          <span id="cap-tog" style="font-size:10px;color:var(--text3)">&#9650; collapse</span>
         </div>
-        <div id="cap-body">
-          <div class="cap-grid" id="cap-grid"></div>
-        </div>
+        <div id="cap-body"><div class="cap-grid" id="cap-grid"></div></div>
       </div>
-
-      <div id="opt-out-bar" class="opt-out-bar">
-        <span class="opt-out-text">Done bidding for the offseason?</span>
-        <button class="opt-out-btn" onclick="confirmOptOut()">End my auction</button>
+      <div id="opt-bar" class="opt-out-bar">
+        <span style="font-size:12px;color:var(--text2)">Done bidding for the offseason?</span>
+        <button class="opt-out-btn" onclick="doOptOut()">End my auction</button>
       </div>
-      <div id="opted-out-notice" class="opted-out-notice" style="display:none">
-        You've opted out of the auction. You can still watch but cannot place bids or nominations.
-      </div>
-
-      <div class="sec-lbl" id="live-label">Active auctions</div>
+      <div id="opted-notice" class="opted-notice" style="display:none">You have opted out. You can watch but cannot bid or nominate.</div>
+      <div class="sec-lbl" id="live-lbl">Active auctions</div>
       <div class="cards" id="live-cards"></div>
     </div>
-
-    <!-- Nominate tab -->
     <div id="tab-nominate" style="display:none">
-      <div id="nom-opted-out" class="opted-out-notice" style="display:none">You've opted out — nominations are disabled.</div>
-      <div class="nom-wrap" id="nom-wrap">
-        <div class="nom-search">
-          <input type="text" id="nom-search-input" placeholder="Search free agents…" oninput="renderNomList()" />
-        </div>
-        <div class="nom-pos-tabs" id="nom-pos-tabs"></div>
+      <div id="nom-opted" class="opted-notice" style="display:none">You have opted out &mdash; nominations are disabled.</div>
+      <div class="nom-wrap">
+        <div class="nom-search"><input type="text" id="nom-q" placeholder="Search free agents..." oninput="renderNom()"></div>
+        <div class="nom-pos-tabs" id="nom-tabs"></div>
         <div class="nom-list" id="nom-list"></div>
         <div class="nom-footer" id="nom-footer"></div>
       </div>
     </div>
-
-    <!-- Sold tab -->
     <div id="tab-sold" style="display:none">
       <div class="sold-wrap">
-        <div class="sold-header"><span>Player</span><span>Team</span><span style="text-align:right">Final bid</span></div>
+        <div class="sold-hdr"><span>Player</span><span>Team</span><span style="text-align:right">Final bid</span></div>
         <div id="sold-list"></div>
       </div>
     </div>
-
-    <!-- Commissioner tab -->
     <div id="tab-commissioner" style="display:none">
-      <div class="settings-section">
-
-        <div class="settings-card">
-          <div class="settings-title">Timer settings</div>
-          <div class="s-row"><span class="s-label">Initial auction timer (hours)</span><div style="display:flex;gap:6px"><input class="s-input" id="s-timer-initial" value="18" /><button class="s-btn save" onclick="saveTimers()">Save</button></div></div>
-          <div class="s-row"><span class="s-label">Overbid reset timer (hours)</span><input class="s-input" id="s-timer-overbid" value="18" /></div>
-          <div class="s-row"><span class="s-label">Minimum bid increment</span><input class="s-input" id="s-increment" value="250000" /></div>
-          <div class="s-row"><span class="s-label">Minimum starting bid</span><input class="s-input" id="s-min-bid" value="1000000" /></div>
+      <div class="settings-wrap">
+        <div class="s-card">
+          <div class="s-title">Testing tools</div>
+          <div class="s-row"><span class="s-label">Initialize all 12 teams with default cap space and settings</span><button class="s-btn save" onclick="doSeed()">Seed DB</button></div>
+          <div class="s-row"><span class="s-label">Add a test auction manually</span><button class="s-btn" onclick="doAddAuction()">Add auction</button></div>
+          <div class="s-row"><span class="s-label">Clear all auctions</span><button class="s-btn danger" onclick="doClearAuctions()">Clear auctions</button></div>
         </div>
-
-        <div class="settings-card">
-          <div class="settings-title">Adjust team cap space</div>
-          <div class="s-row">
-            <select class="s-select" id="s-cap-team"></select>
-            <input class="s-input" id="s-cap-value" placeholder="$18.25M" />
-            <button class="s-btn save" onclick="saveCapSpace()">Save</button>
-          </div>
+        <div class="s-card">
+          <div class="s-title">Timer settings</div>
+          <div class="s-row"><span class="s-label">Initial timer (hours)</span><div style="display:flex;gap:5px"><input class="s-input" id="s-init" value="18"><button class="s-btn save" onclick="doSaveTimers()">Save</button></div></div>
+          <div class="s-row"><span class="s-label">Overbid reset timer (hours)</span><input class="s-input" id="s-over" value="18"></div>
+          <div class="s-row"><span class="s-label">Min bid increment</span><input class="s-input" id="s-inc" value="250000"></div>
+          <div class="s-row"><span class="s-label">Minimum starting bid</span><input class="s-input" id="s-min" value="1000000"></div>
         </div>
-
-        <div class="settings-card">
-          <div class="settings-title">Cancel a winning bid</div>
-          <div class="s-row">
-            <select class="s-select" id="s-cancel-bid-sel"></select>
-            <button class="s-btn danger" onclick="commCancelBid()">Cancel bid</button>
-          </div>
-          <div class="s-hint">Cancels the current leading bid and reopens bidding. Timer continues.</div>
+        <div class="s-card">
+          <div class="s-title">Adjust team cap space</div>
+          <div class="s-row"><select class="s-select" id="s-cap-team"></select><input class="s-input" id="s-cap-val" placeholder="e.g. 18.25M"><button class="s-btn save" onclick="doSaveCap()">Save</button></div>
         </div>
-
-        <div class="settings-card">
-          <div class="settings-title">Remove a nomination</div>
-          <div class="s-row">
-            <select class="s-select" id="s-remove-nom-sel"></select>
-            <button class="s-btn danger" onclick="commRemoveNom()">Remove</button>
-          </div>
-          <div class="s-hint">Removes the auction entirely. Nomination slot returned to the team.</div>
+        <div class="s-card">
+          <div class="s-title">Cancel winning bid</div>
+          <div class="s-row"><select class="s-select" id="s-cancel-sel"></select><button class="s-btn danger" onclick="doCancelBid()">Cancel bid</button></div>
+          <div class="s-hint">Removes current leader's bid. Timer continues. Bidding reopens.</div>
         </div>
-
-        <div class="settings-card">
-          <div class="settings-title">Reset a nomination slot</div>
-          <div class="s-row">
-            <select class="s-select" id="s-reset-slot-sel"></select>
-            <button class="s-btn" onclick="commResetSlot()">Reset slot</button>
-          </div>
-          <div class="s-hint">Gives the team their nomination slot back without removing their current nomination.</div>
+        <div class="s-card">
+          <div class="s-title">Remove a nomination</div>
+          <div class="s-row"><select class="s-select" id="s-remove-sel"></select><button class="s-btn danger" onclick="doRemoveNom()">Remove</button></div>
+          <div class="s-hint">Removes auction entirely. Nomination slot returned to team.</div>
         </div>
-
-        <div class="settings-card">
-          <div class="settings-title">Undo team opt-out</div>
-          <div class="s-row">
-            <select class="s-select" id="s-undo-optout-sel"></select>
-            <button class="s-btn" onclick="commUndoOptOut()">Undo opt-out</button>
-          </div>
+        <div class="s-card">
+          <div class="s-title">Reset nomination slot</div>
+          <div class="s-row"><select class="s-select" id="s-reset-sel"></select><button class="s-btn" onclick="doResetSlot()">Reset slot</button></div>
         </div>
-
-        <div class="settings-card">
-          <div class="settings-title">Force close an auction</div>
-          <div class="s-row">
-            <select class="s-select" id="s-force-close-sel"></select>
-            <button class="s-btn danger" onclick="commForceClose()">Force close</button>
-          </div>
-          <div class="s-hint">Awards the player to the current leader immediately at the current bid.</div>
+        <div class="s-card">
+          <div class="s-title">Undo team opt-out</div>
+          <div class="s-row"><select class="s-select" id="s-undo-sel"></select><button class="s-btn" onclick="doUndoOptOut()">Undo</button></div>
         </div>
-
-        <div class="settings-card">
-          <div class="settings-title">Seed database for testing</div>
-          <div class="s-row">
-            <span class="s-label">Initialize teams with default cap space &amp; settings</span>
-            <button class="s-btn save" onclick="seedDatabase()">Seed now</button>
-          </div>
-          <div class="s-hint">Sets cap space for all 12 teams, default timer settings, and clears all auctions. Use only to start fresh.</div>
-          <div class="s-row">
-            <span class="s-label">Add a test auction manually</span>
-            <button class="s-btn" onclick="openSeedAuctionModal()">Add auction</button>
-          </div>
-          <div class="s-row">
-            <span class="s-label">Clear all auctions (reset)</span>
-            <button class="s-btn danger" onclick="clearAuctions()">Clear auctions</button>
-          </div>
+        <div class="s-card">
+          <div class="s-title">Force close auction</div>
+          <div class="s-row"><select class="s-select" id="s-force-sel"></select><button class="s-btn danger" onclick="doForceClose()">Force close</button></div>
+          <div class="s-hint">Awards player to current leader immediately.</div>
         </div>
-
-        <div class="settings-card">
-          <div class="settings-title">Pause / resume all auctions</div>
-          <div class="s-row">
-            <span class="s-label" id="s-pause-label">All timers will freeze until unpaused.</span>
-            <button class="s-btn danger" id="s-pause-btn" onclick="commTogglePause()">Pause all</button>
-          </div>
+        <div class="s-card">
+          <div class="s-title">Pause / resume all auctions</div>
+          <div class="s-row"><span class="s-label" id="s-pause-lbl">Freeze all timers until unpaused.</span><button class="s-btn danger" id="s-pause-btn" onclick="doTogglePause()">Pause all</button></div>
         </div>
-
-        <div class="settings-card">
-          <div class="settings-title">Full bid history</div>
-          <div class="s-row">
-            <select class="s-select" id="s-history-sel"></select>
-            <button class="s-btn" onclick="commViewHistory()">View log</button>
-          </div>
-          <div id="s-history-log" style="margin-top:.5rem;font-size:12px;color:var(--text2);max-height:200px;overflow-y:auto"></div>
+        <div class="s-card">
+          <div class="s-title">Price change history</div>
+          <div class="s-row"><select class="s-select" id="s-hist-sel"></select><button class="s-btn" onclick="doViewHistory()">View log</button></div>
+          <div class="hist-log" id="hist-log"></div>
         </div>
-
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- ── Confirm Modal ── -->
-<div class="modal-overlay" id="modal">
-  <div class="modal">
-    <div class="modal-title" id="modal-title">Confirm</div>
-    <div class="modal-body" id="modal-body"></div>
-    <div class="modal-btns">
-      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
-      <button class="modal-confirm" id="modal-confirm-btn" onclick="modalConfirm()">Confirm</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── Blind Max Modal ── -->
-<div class="modal-overlay" id="blind-modal">
-  <div class="modal">
-    <div class="modal-title" id="blind-modal-title">Update blind max</div>
-    <div class="modal-body">
-      <input type="number" id="blind-modal-input" placeholder="Enter blind max (e.g. 12000000)" step="250000"
-        style="width:100%;padding:9px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:14px;font-family:var(--font);margin-top:.25rem" />
-    </div>
-    <div class="modal-btns">
-      <button class="modal-cancel" onclick="closeBlindModal()">Cancel</button>
-      <button class="modal-confirm" onclick="confirmBlind()">Set Blind</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── Toast ── -->
 <div class="toast" id="toast"></div>
 
-<!-- ── Firebase compat SDK (global scope) ── -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 firebase.initializeApp({
-  apiKey: "AIzaSyDlF3HYxe4CuVZQp4SVMMSpj-dlMfhz6pg",
-  authDomain: "cpl-league-auction.firebaseapp.com",
-  databaseURL: "https://cpl-league-auction-default-rtdb.firebaseio.com",
-  projectId: "cpl-league-auction",
-  storageBucket: "cpl-league-auction.firebasestorage.app",
-  messagingSenderId: "83620835147",
-  appId: "1:83620835147:web:86d9f514f3a92b4c13c2ce"
+  apiKey:"AIzaSyDlF3HYxe4CuVZQp4SVMMSpj-dlMfhz6pg",
+  authDomain:"cpl-league-auction.firebaseapp.com",
+  databaseURL:"https://cpl-league-auction-default-rtdb.firebaseio.com",
+  projectId:"cpl-league-auction",
+  storageBucket:"cpl-league-auction.firebasestorage.app",
+  messagingSenderId:"83620835147",
+  appId:"1:83620835147:web:86d9f514f3a92b4c13c2ce"
 });
-const db = firebase.database();
+var db = firebase.database();
 
-// Compat SDK wrappers to match modular API usage below
-function ref(db, path)           { return path ? db.ref(path) : db.ref(); }
-function onValue(r, cb)          { r.on("value", snap => cb(snap)); }
-function set(r, val)             { return r.set(val); }
-function update(r, val)          { return r.update(val); }
-function push(r, val)            { const nr = r.push(); if(val) nr.set(val); return nr; }
-function get(r)                  { return r.once("value"); }
-function serverTimestamp()       { return firebase.database.ServerValue.TIMESTAMP; }
+var LOGO = "https://drewkyoder-netizen.github.io/cpl-league/";
+var FA_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=726351656&single=true&output=csv";
+var COMM = "CHC";
+var INC = 250000;
+var MIN_BID = 1000000;
 
-const LOGO_BASE = "https://drewkyoder-netizen.github.io/cpl-league/";
-const COMMISSIONER = "CHC";
-const INCREMENT = 250000;
-const MIN_BID   = 1000000;
-const INITIAL_TIMER_MS  = 18 * 60 * 60 * 1000;
-const OVERBID_TIMER_MS  = 18 * 60 * 60 * 1000;
-
-const TEAMS = {
-  CHC:{ name:"Chicago Cubs",      owner:"Drew Yoder",     color:"#0E3386", logo:"chc.png" },
-  CIN:{ name:"Cincinnati Reds",   owner:"Sean Wasserman", color:"#C6011F", logo:"cin.png" },
-  BAL:{ name:"Baltimore Orioles", owner:"David Cortez",   color:"#DF4601", logo:"bal.png" },
-  KC: { name:"Kansas City Royals",owner:"Jon Gelber",     color:"#174185", logo:"kc.png"  },
-  SEA:{ name:"Seattle Mariners",  owner:"Dirk Adkinson",  color:"#005C5C", logo:"sea.png" },
-  LAD:{ name:"Los Angeles Dodgers",owner:"David Fatoki",  color:"#005A9C", logo:"lad.png" },
-  LAA:{ name:"Los Angeles Angels",owner:"Kirk Lacob",     color:"#BA0021", logo:"laa.png" },
-  TEX:{ name:"Texas Rangers",     owner:"Jake Gavlick",   color:"#003278", logo:"tex.png" },
-  MIL:{ name:"Milwaukee Brewers", owner:"Jason Stein",    color:"#12284B", logo:"mil.png" },
-  LV: { name:"Las Vegas A's",     owner:"Chris Poulson",  color:"#003831", logo:"lv.png"  },
-  SD: { name:"San Diego Padres",  owner:"Bert Ortiz",     color:"#2F241D", logo:"sd.png"  },
-  SF: { name:"San Francisco Giants",owner:"Mac Osborn",   color:"#FD5A1E", logo:"sf.png"  },
+var TEAMS = {
+  CHC:{n:"Chicago Cubs",      o:"Drew Yoder",     c:"#0E3386",l:"chc.png"},
+  CIN:{n:"Cincinnati Reds",   o:"Sean Wasserman", c:"#C6011F",l:"cin.png"},
+  BAL:{n:"Baltimore Orioles", o:"David Cortez",   c:"#DF4601",l:"bal.png"},
+  KC: {n:"Kansas City Royals",o:"Jon Gelber",     c:"#174185",l:"kc.png"},
+  SEA:{n:"Seattle Mariners",  o:"Dirk Adkinson",  c:"#005C5C",l:"sea.png"},
+  LAD:{n:"Los Angeles Dodgers",o:"David Fatoki",  c:"#005A9C",l:"lad.png"},
+  LAA:{n:"Los Angeles Angels",o:"Kirk Lacob",     c:"#BA0021",l:"laa.png"},
+  TEX:{n:"Texas Rangers",     o:"Jake Gavlick",   c:"#003278",l:"tex.png"},
+  MIL:{n:"Milwaukee Brewers", o:"Jason Stein",    c:"#12284B",l:"mil.png"},
+  LV: {n:"Las Vegas A's",     o:"Chris Poulson",  c:"#003831",l:"lv.png"},
+  SD: {n:"San Diego Padres",  o:"Bert Ortiz",     c:"#2F241D",l:"sd.png"},
+  SF: {n:"San Francisco Giants",o:"Mac Osborn",   c:"#FD5A1E",l:"sf.png"}
 };
-const TEAM_ORDER = ["CHC","CIN","BAL","KC","SEA","LAD","LAA","TEX","MIL","LV","SD","SF"];
+var TEAM_ORDER = ["CHC","CIN","BAL","KC","SEA","LAD","LAA","TEX","MIL","LV","SD","SF"];
+var DEFAULT_CAPS = {CHC:18250000,CIN:22000000,BAL:15500000,KC:31000000,SEA:9750000,LAD:5500000,LAA:12000000,TEX:28500000,MIL:41000000,LV:19250000,SD:7000000,SF:11500000};
 
-// ── State ──
-let currentTeam = null;
-let auctionData  = {};  // firebase snapshot
-let teamData     = {};  // firebase snapshot
-let settingsData = {};
-let freeAgents   = [];  // from CPL player salary sheet
-let nomPosFilter = "All";
-let modalAction  = null;
-let pendingBlindAuctionId = null;
+var me = null;
+var aData = {};
+var tData = {};
+var sData = {};
+var faList = [];
+var nomPos = "All";
+var nomPlayers = [];
 
-// ── Firebase listeners ──
-onValue(ref(db, "auctions"), snap => {
-  auctionData = snap.val() || {};
-  renderAll();
-});
-onValue(ref(db, "teams"), snap => {
-  teamData = snap.val() || {};
-  renderAll();
-});
-onValue(ref(db, "settings"), snap => {
-  settingsData = snap.val() || {};
-  renderAll();
-});
+db.ref("auctions").on("value", function(s){ aData = s.val() || {}; renderAll(); });
+db.ref("teams").on("value",   function(s){ tData = s.val() || {}; renderAll(); });
+db.ref("settings").on("value",function(s){ sData = s.val() || {}; renderAll(); });
 
-// ── Load FA pool from Google Sheets ──
-const FA_POOL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_ZOGGOUBWfnXl8-B_-tcRjZ0zWyqsVXJrb_ouTkphZY0yuFFsPJ4WQtEI3mi6ht1pWaCAmfamIqLV/pub?gid=726351656&single=true&output=csv";
-
-async function loadFreeAgents() {
-  const proxies = [
-    FA_POOL_CSV,
-    "https://api.allorigins.win/raw?url=" + encodeURIComponent(FA_POOL_CSV),
-    "https://corsproxy.io/?" + encodeURIComponent(FA_POOL_CSV),
-    "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(FA_POOL_CSV)
-  ];
-  for (const proxy of proxies) {
-    try {
-      const ctrl = new AbortController();
-      const t = setTimeout(()=>ctrl.abort(), 8000);
-      const res = await fetch(proxy, {signal:ctrl.signal});
-      clearTimeout(t);
-      if (!res.ok) continue;
-      const text = await res.text();
-      if (!text || text.trim().startsWith("<")) continue;
-      // Columns: Player, Position
-      const rows = text.trim().split("\n").map(r => {
-        const parts = r.split(",").map(c => c.replace(/^"|"$/g,"").trim());
-        return { name: parts[0], position: parts[1]||"", salary: 0 };
-      });
-      freeAgents = rows.slice(1).filter(r => r.name);
-      renderNomList();
-      return;
-    } catch(e) { /* try next proxy */ }
-  }
-  // All proxies failed — show error in the list
-  var el = document.getElementById("nom-list");
-  if (el) el.innerHTML = '<div class="nom-empty" style="color:var(--danger)">Could not load FA pool.<br><small>Make sure the Free Agent Pool tab is published as CSV.</small><br><br><button onclick="loadFreeAgents()" style="padding:6px 14px;background:var(--text);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">Retry</button></div>';
+function fmtM(n) {
+  if (!n) return "$0";
+  return "$" + (n/1000000).toFixed(2) + "M";
 }
 
 function parseMoney(s) {
   if (!s) return 0;
-  s = s.toString().trim();
-  const neg = s.includes("(") || s.startsWith("-");
-  const upper = s.toUpperCase();
-  // Handle M/K suffixes (e.g. $18.25M, 250K)
-  const mMatch = upper.match(/([\d,\.]+)M/);
-  const kMatch = upper.match(/([\d,\.]+)K/);
-  let n = 0;
-  if (mMatch) n = parseFloat(mMatch[1].replace(/,/g,"")) * 1000000;
-  else if (kMatch) n = parseFloat(kMatch[1].replace(/,/g,"")) * 1000;
-  else n = parseFloat(s.replace(/[$,()\.\-\s]/g,"").replace(/[^\d]/g,"")) || 0;
+  s = String(s).trim();
+  var neg = s.includes("(") || s.charAt(0) === "-";
+  var up = s.toUpperCase();
+  var n = 0;
+  var mMatch = up.match(/([0-9,.]+)M/);
+  var kMatch = up.match(/([0-9,.]+)K/);
+  if (mMatch) {
+    n = parseFloat(mMatch[1].replace(/,/g,"")) * 1000000;
+  } else if (kMatch) {
+    n = parseFloat(kMatch[1].replace(/,/g,"")) * 1000;
+  } else {
+    n = parseFloat(s.replace(/[^0-9.]/g,"")) || 0;
+  }
   return neg ? -n : n;
 }
 
-function fmtM(n) {
-  if (!n) return "—";
-  return "$"+(n/1e6).toFixed(2)+"M";
+function logoImg(abbr, size) {
+  var t = TEAMS[abbr];
+  if (!t) return "";
+  return '<img src="' + LOGO + t.l + '" width="' + size + '" height="' + size + '" style="border-radius:' + Math.floor(size/2) + 'px;object-fit:contain;background:#fff;display:block">';
 }
 
-function logoEl(abbr, size=24, cls="") {
-  const t = TEAMS[abbr];
-  if (!t) return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#888"></div>`;
-  return `<img src="${LOGO_BASE}${t.logo}" alt="${abbr}" width="${size}" height="${size}"
-    style="border-radius:50%;object-fit:contain;background:#fff;flex-shrink:0;display:block"
-    onerror="this.style.display='none'">`;
-}
-
-// ── Timer helpers ──
-function msLeft(expiresAt) { return Math.max(0, expiresAt - Date.now()); }
-function fmtTimer(ms) {
+function timerStr(expiresAt) {
+  var ms = Math.max(0, expiresAt - Date.now());
   if (ms <= 0) return "0m";
-  const h = Math.floor(ms/3600000);
-  const m = Math.floor((ms%3600000)/60000);
-  if (h > 0) return `${h}h ${m}m`;
-  const s = Math.floor((ms%60000)/1000);
-  return `${m}m ${s}s`;
+  var h = Math.floor(ms / 3600000);
+  var m = Math.floor((ms % 3600000) / 60000);
+  if (h > 0) return h + "h " + m + "m";
+  var s = Math.floor((ms % 60000) / 1000);
+  return m + "m " + s + "s";
 }
 
-// ── Render all ──
+function showToast(msg) {
+  var el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(function(){ el.classList.remove("show"); }, 2800);
+}
+
 function renderAll() {
-  if (!currentTeam) return;
+  if (!me) return;
   renderCapGrid();
   renderLiveCards();
   renderSoldList();
   renderOptOut();
-  if (currentTeam === COMMISSIONER) populateCommissioner();
+  if (me === COMM) populateCommSettings();
 }
 
-// ── Cap grid ──
 function renderCapGrid() {
-  const grid = document.getElementById("cap-grid");
-  if (!grid) return;
-  grid.innerHTML = TEAM_ORDER.map(abbr => {
-    const t = TEAMS[abbr];
-    const td = teamData[abbr] || {};
-    const cap = td.capSpace !== undefined ? td.capSpace : getDefaultCap(abbr);
-    const optedOut = td.optedOut;
-    const hasNom = td.nominationUsed;
-    const low = cap < 10000000;
-    let badge = "";
-    if (optedOut) badge = `<span class="cap-badge done">DONE</span>`;
-    else if (!hasNom) badge = `<span class="cap-badge nom">NOM</span>`;
-    else badge = `<span class="cap-spacer"></span>`;
-    return `<div class="cap-cell">
-      <div class="cap-logo" style="background:${t.color}">${logoEl(abbr,22)}</div>
-      <div class="cap-val${low?" low":""}">${fmtM(cap)}</div>
-      ${badge}
-    </div>`;
+  var el = document.getElementById("cap-grid");
+  if (!el) return;
+  el.innerHTML = TEAM_ORDER.map(function(abbr) {
+    var t = TEAMS[abbr];
+    var td = tData[abbr] || {};
+    var cap = td.capSpace !== undefined ? td.capSpace : DEFAULT_CAPS[abbr];
+    var low = cap < 10000000;
+    var badge = "";
+    if (td.optedOut) {
+      badge = '<span class="cap-badge done">DONE</span>';
+    } else if (!td.nominationUsed) {
+      badge = '<span class="cap-badge nom">NOM</span>';
+    } else {
+      badge = '<span class="cap-spacer"></span>';
+    }
+    return '<div class="cap-cell">'
+      + '<div class="cap-logo-wrap">' + logoImg(abbr, 24) + '</div>'
+      + '<div class="cap-val' + (low ? " low" : "") + '">' + fmtM(cap) + '</div>'
+      + badge
+      + '</div>';
   }).join("");
 }
 
-function getDefaultCap(abbr) {
-  const defaults = {
-    CHC:18250000, CIN:22000000, BAL:15500000, KC:31000000,
-    SEA:9750000,  LAD:5500000,  LAA:12000000, TEX:28500000,
-    MIL:41000000, LV:19250000,  SD:7000000,   SF:11500000
-  };
-  return defaults[abbr] || 20000000;
-}
-
-// ── Live cards ──
 function renderLiveCards() {
-  const container = document.getElementById("live-cards");
-  const lbl = document.getElementById("live-label");
-  const isPaused = settingsData.paused;
-  const live = Object.entries(auctionData).filter(([,a])=>a.status==="active");
-  if (!container) return;
-  if (live.length === 0) {
-    container.innerHTML = `<div class="empty-state">No active auctions right now.</div>`;
+  var el = document.getElementById("live-cards");
+  var lbl = document.getElementById("live-lbl");
+  if (!el) return;
+  var paused = sData.paused;
+  var live = Object.entries(aData).filter(function(e){ return e[1].status === "active"; });
+  if (!live.length) {
+    el.innerHTML = '<div class="empty-state">No active auctions right now.</div>';
     if (lbl) lbl.textContent = "Active auctions";
     return;
   }
-  if (lbl) lbl.textContent = `Active auctions · ${live.length}${isPaused?" · ⏸ PAUSED":""}`;
-
-  const td = teamData[currentTeam] || {};
-  const isOptedOut = td.optedOut;
-
-  container.innerHTML = live.map(([id,a]) => {
-    const remaining = msLeft(a.expiresAt);
-    const isClosing = remaining < 2*3600000 && remaining > 0;
-    const isWinning = a.leader === currentTeam;
-    const myBlind   = a.blindBids && a.blindBids[currentTeam];
-    const nextBid   = (a.currentBid || MIN_BID) + INCREMENT;
-
-    const cardClass = isClosing ? "a-card closing" : isWinning ? "a-card winning" : "a-card";
-    const timerClass = isClosing ? "urgent" : isWinning ? "ok" : "";
-    const posTag = a.position ? `<span class="a-pos">${a.position}</span>` : "";
-
-    const leaderLogoHtml = `<div class="a-leader-logo${isWinning?" you":""}" style="background:${a.leader?TEAMS[a.leader]?.color||"#888":"#888"}">
-      ${a.leader ? logoEl(a.leader, 44) : ""}
-    </div>`;
-
-    let btns = "";
-    if (isOptedOut) {
-      btns = `<button class="abtn" disabled style="opacity:.5">Opted out</button>`;
-    } else if (isWinning && myBlind) {
-      btns = `<button class="abtn blind-active" onclick="openBlindModal('${id}')">Blind max: ${fmtM(myBlind)}</button>
-              <div class="a-blind-row">
-                <input class="a-blind-input" id="blind-input-${id}" placeholder="Update blind max…" />
-                <button class="a-blind-btn" onclick="setBlind('${id}')">Set Blind</button>
-              </div>`;
-    } else if (isWinning) {
-      btns = `<button class="abtn winning-no-blind">Winning · ${fmtM(a.currentBid)}</button>
-              <div class="a-blind-row">
-                <input class="a-blind-input" id="blind-input-${id}" placeholder="Set blind max…" />
-                <button class="a-blind-btn" onclick="setBlind('${id}')">Set Blind</button>
-              </div>`;
+  if (lbl) lbl.textContent = "Active auctions" + (paused ? " (PAUSED)" : "");
+  var td = tData[me] || {};
+  var isOut = td.optedOut;
+  el.innerHTML = live.map(function(entry) {
+    var id = entry[0];
+    var a = entry[1];
+    var ms = Math.max(0, a.expiresAt - Date.now());
+    var closing = ms < 7200000 && ms > 0;
+    var winning = a.leader === me;
+    var myBlind = a.blindBids ? (a.blindBids[me] || 0) : 0;
+    var nextBid = (a.currentBid || MIN_BID) + INC;
+    var cardCls = "a-card" + (closing ? " closing" : winning ? " winning" : "");
+    var timerCls = closing ? "urgent" : winning ? "ok" : "";
+    var leaderLogoHtml = a.leader
+      ? '<div class="a-leader' + (winning ? " you" : "") + '" style="background:' + (TEAMS[a.leader] ? TEAMS[a.leader].c : "#888") + '">' + logoImg(a.leader, 48) + '</div>'
+      : '<div class="a-leader" style="background:#ccc"></div>';
+    var btns = "";
+    if (isOut) {
+      btns = '<button class="abtn" disabled style="opacity:.4">Opted out</button>';
+    } else if (winning && myBlind > 0) {
+      btns = '<button class="abtn blind-active">Blind max: ' + fmtM(myBlind) + '</button>'
+        + '<div class="blind-row"><input class="blind-input" id="bi-' + id + '" placeholder="Update blind max...">'
+        + '<button class="blind-btn" onclick="doSetBlind(\'' + id + '\')">Set Blind</button></div>';
+    } else if (winning) {
+      btns = '<button class="abtn winning-nb">Winning &middot; ' + fmtM(a.currentBid) + '</button>'
+        + '<div class="blind-row"><input class="blind-input" id="bi-' + id + '" placeholder="Set blind max...">'
+        + '<button class="blind-btn" onclick="doSetBlind(\'' + id + '\')">Set Blind</button></div>';
     } else {
-      btns = `<button class="abtn primary" onclick="placeBid('${id}',${nextBid})">Bid ${fmtM(nextBid)}</button>
-              <div class="a-blind-row">
-                <input class="a-blind-input" id="blind-input-${id}" placeholder="Blind max…" />
-                <button class="a-blind-btn" onclick="setBlind('${id}')">Set Blind</button>
-              </div>`;
+      btns = '<button class="abtn primary" onclick="doBid(\'' + id + '\',' + nextBid + ')">Bid ' + fmtM(nextBid) + '</button>'
+        + '<div class="blind-row"><input class="blind-input" id="bi-' + id + '" placeholder="Blind max...">'
+        + '<button class="blind-btn" onclick="doSetBlind(\'' + id + '\')">Set Blind</button></div>';
     }
-
-    return `<div class="${cardClass}${isOptedOut?" opted-out-card":""}">
-      <div class="a-inner">
-        <div>
-          <div><span class="a-name">${a.playerName}</span>${posTag}</div>
-          <div class="a-stats">
-            <div><div class="a-stat-lbl">Current bid</div><div class="a-stat-val">${fmtM(a.currentBid||MIN_BID)}</div></div>
-            <div><div class="a-stat-lbl">Closes in</div><div class="a-stat-val ${timerClass}">${isPaused?"PAUSED":fmtTimer(remaining)}</div></div>
-          </div>
-        </div>
-        ${leaderLogoHtml}
-        <div class="a-btns">${btns}</div>
-      </div>
-    </div>`;
+    var pos = a.position ? '<span class="a-pos">' + a.position + '</span>' : "";
+    return '<div class="' + cardCls + '">'
+      + '<div class="a-inner">'
+      + '<div><div><span class="a-name">' + a.playerName + '</span>' + pos + '</div>'
+      + '<div class="a-stats">'
+      + '<div><div class="a-sl">Current bid</div><div class="a-sv">' + fmtM(a.currentBid || MIN_BID) + '</div></div>'
+      + '<div><div class="a-sl">Closes in</div><div class="a-sv ' + timerCls + '">' + (paused ? "PAUSED" : timerStr(a.expiresAt)) + '</div></div>'
+      + '</div></div>'
+      + leaderLogoHtml
+      + '<div class="a-btns">' + btns + '</div>'
+      + '</div></div>';
   }).join("");
-
-  // Live timer updates every 10s
-  clearInterval(window._timerInterval);
-  window._timerInterval = setInterval(renderLiveCards, 10000);
+  clearInterval(window._ti);
+  window._ti = setInterval(renderLiveCards, 10000);
 }
 
-// ── Sold list ──
 function renderSoldList() {
-  const el = document.getElementById("sold-list");
+  var el = document.getElementById("sold-list");
   if (!el) return;
-  const sold = Object.entries(auctionData).filter(([,a])=>a.status==="sold");
-  if (sold.length === 0) { el.innerHTML = `<div class="empty-state" style="padding:1rem">No sales yet.</div>`; return; }
-  el.innerHTML = sold.map(([,a]) => `<div class="sold-row">
-    <div><div style="font-weight:600;color:var(--text)">${a.playerName}</div><div style="font-size:11px;color:var(--text3)">${a.position||""}</div></div>
-    <div class="sold-logo" style="background:${a.winner?TEAMS[a.winner]?.color||"#888":"#888"}">${a.winner?logoEl(a.winner,32):""}</div>
-    <div class="sold-price">${fmtM(a.finalBid)}</div>
-  </div>`).join("");
+  var sold = Object.entries(aData).filter(function(e){ return e[1].status === "sold"; });
+  if (!sold.length) { el.innerHTML = '<div class="empty-state" style="padding:1rem">No sales yet.</div>'; return; }
+  el.innerHTML = sold.map(function(entry) {
+    var a = entry[1];
+    var logoHtml = a.winner
+      ? '<div class="sold-logo" style="background:' + (TEAMS[a.winner] ? TEAMS[a.winner].c : "#888") + '">' + logoImg(a.winner, 32) + '</div>'
+      : '<div class="sold-logo"></div>';
+    return '<div class="sold-row">'
+      + '<div><div style="font-weight:600">' + a.playerName + '</div><div style="font-size:11px;color:var(--text3)">' + (a.position || "") + '</div></div>'
+      + logoHtml
+      + '<div class="sold-price">' + fmtM(a.finalBid) + '</div>'
+      + '</div>';
+  }).join("");
 }
 
-// ── Opt-out ──
 function renderOptOut() {
-  const td = teamData[currentTeam] || {};
-  const bar    = document.getElementById("opt-out-bar");
-  const notice = document.getElementById("opted-out-notice");
-  const nomNotice = document.getElementById("nom-opted-out");
+  var td = tData[me] || {};
+  var bar = document.getElementById("opt-bar");
+  var notice = document.getElementById("opted-notice");
+  var nomNotice = document.getElementById("nom-opted");
   if (td.optedOut) {
     if (bar) bar.style.display = "none";
     if (notice) notice.style.display = "block";
@@ -694,567 +491,400 @@ function renderOptOut() {
   }
 }
 
-// ── Nominate ──
-function renderNomList() {
-  const el   = document.getElementById("nom-list");
-  const foot = document.getElementById("nom-footer");
-  const tabs = document.getElementById("nom-pos-tabs");
-  if (!el) return;
-
-  const td = teamData[currentTeam] || {};
-  const nomUsed = td.nominationUsed;
-  const nominatedNames = new Set(Object.values(auctionData).map(a=>a.playerName));
-  const query = (document.getElementById("nom-search-input")?.value||"").toLowerCase();
-
-  // Position tabs
-  const positions = ["All","C","1B","2B","SS","3B","OF","SP","RP"];
-  if (tabs) tabs.innerHTML = positions.map(p=>
-    `<div class="nom-pos-tab${nomPosFilter===p?" active":""}" onclick="setNomPos('${p}')">${p}</div>`
-  ).join("");
-
-  let players = freeAgents.filter(p => !nominatedNames.has(p.name));
-  if (nomPosFilter !== "All") players = players.filter(p=>(p.position||"").includes(nomPosFilter));
-  if (query) players = players.filter(p=>p.name.toLowerCase().includes(query)||
-    (p.position||"").toLowerCase().includes(query));
-
-  if (players.length === 0) {
-    el.innerHTML = `<div class="nom-empty">No free agents found.</div>`;
-  } else {
-    // Store players globally for onclick access
-    window._nomPlayers = players;
-    el.innerHTML = players.map((p,i)=>`<div class="nom-row">
-      <div>
-        <div class="nom-pname">${p.name}</div>
-        <div class="nom-pmeta">${p.position||"—"}</div>
-      </div>
-      <button class="nom-add-btn" ${nomUsed?"disabled":""} onclick="window._doNominate(${i})">
-        ${nomUsed?"Used":"+ Nominate"}
-      </button>
-    </div>`).join("");
+function renderNom() {
+  var listEl = document.getElementById("nom-list");
+  var footEl = document.getElementById("nom-footer");
+  var tabsEl = document.getElementById("nom-tabs");
+  if (!listEl) return;
+  var td = tData[me] || {};
+  var nomUsed = td.nominationUsed;
+  var nominated = {};
+  Object.values(aData).forEach(function(a){ if (a.playerName) nominated[a.playerName] = true; });
+  var q = (document.getElementById("nom-q") ? document.getElementById("nom-q").value : "").toLowerCase();
+  var positions = ["All","C","1B","2B","SS","3B","OF","SP","RP"];
+  if (tabsEl) {
+    tabsEl.innerHTML = positions.map(function(p){
+      return '<div class="nom-pos-tab' + (nomPos === p ? " active" : "") + '" onclick="setNomPos(\'' + p + '\')">' + p + '</div>';
+    }).join("");
   }
-  if (foot) foot.textContent = nomUsed
-    ? "You've used your nomination for this round."
-    : "1 nomination available · Starting bid minimum $1.00M";
+  var players = faList.filter(function(p){
+    if (nominated[p.name]) return false;
+    if (nomPos !== "All" && !(p.pos || "").includes(nomPos)) return false;
+    if (q && !p.name.toLowerCase().includes(q) && !(p.pos || "").toLowerCase().includes(q)) return false;
+    return true;
+  });
+  nomPlayers = players;
+  if (!players.length) {
+    listEl.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text3);font-size:13px">No free agents found.</div>';
+  } else {
+    listEl.innerHTML = players.map(function(p, i){
+      return '<div class="nom-row">'
+        + '<div><div class="nom-pname">' + p.name + '</div><div class="nom-pmeta">' + (p.pos || "—") + '</div></div>'
+        + '<button class="nom-btn"' + (nomUsed ? " disabled" : "") + ' onclick="doNominate(' + i + ')">'
+        + (nomUsed ? "Used" : "+ Nominate") + '</button>'
+        + '</div>';
+    }).join("");
+  }
+  if (footEl) footEl.textContent = nomUsed
+    ? "Nomination used for this round."
+    : "1 nomination available \u00b7 Starting bid minimum $1.00M";
 }
 
-window.setNomPos = function(pos) { nomPosFilter = pos; renderNomList(); };
+function setNomPos(pos) { nomPos = pos; renderNom(); }
 
-window._doNominate = function(idx) {
-  const p = window._nomPlayers && window._nomPlayers[idx];
-  if (!p) { alert("Player not found at index " + idx); return; }
-  const td = teamData[currentTeam] || {};
+async function loadFA() {
+  var proxies = [FA_CSV,
+    "https://api.allorigins.win/raw?url=" + encodeURIComponent(FA_CSV),
+    "https://corsproxy.io/?" + encodeURIComponent(FA_CSV),
+    "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(FA_CSV)
+  ];
+  for (var i = 0; i < proxies.length; i++) {
+    try {
+      var ctrl = new AbortController();
+      var t = setTimeout(function(){ ctrl.abort(); }, 8000);
+      var res = await fetch(proxies[i], {signal: ctrl.signal});
+      clearTimeout(t);
+      if (!res.ok) continue;
+      var text = await res.text();
+      if (!text || text.trim().charAt(0) === "<") continue;
+      var rows = text.trim().split("\n");
+      faList = rows.slice(1).map(function(r){
+        var parts = r.split(",").map(function(c){ return c.replace(/^"|"$/g,"").trim(); });
+        return {name: parts[0], pos: parts[1] || ""};
+      }).filter(function(p){ return p.name; });
+      renderNom();
+      return;
+    } catch(e) { }
+  }
+  var el = document.getElementById("nom-list");
+  if (el) el.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--danger);font-size:12px">Could not load FA pool. <button onclick="loadFA()" style="margin-left:8px;padding:4px 10px;cursor:pointer;border-radius:5px;border:0.5px solid #ccc;font-size:11px">Retry</button></div>';
+}
+
+function doNominate(idx) {
+  var p = nomPlayers[idx];
+  if (!p) return;
+  var td = tData[me] || {};
   if (td.nominationUsed) { showToast("You have already used your nomination."); return; }
-  const confirmMsg = "Nominate " + p.name + " for auction starting at $1.00M?";
-  if (!confirm(confirmMsg)) return;
-  // Write to Firebase directly
-  const timerHours = (settingsData.initialTimerHours || 18);
-  const timerMs = timerHours * 3600 * 1000;
-  const newRef = db.ref("auctions").push();
-  newRef.set({
-    playerName: p.name,
-    position: p.position || "",
-    nominatedBy: currentTeam,
-    status: "active",
-    currentBid: 1000000,
-    leader: currentTeam,
+  if (!confirm("Nominate " + p.name + " for auction starting at $1.00M?")) return;
+  var timerMs = ((sData.initialTimerHours || 18) * 3600000);
+  db.ref("auctions").push({
+    playerName: p.name, position: p.pos || "",
+    nominatedBy: me, status: "active",
+    currentBid: 1000000, leader: me,
     expiresAt: Date.now() + timerMs,
-    createdAt: Date.now(),
-    bids: {}
-  }).then(function() {
-    db.ref("teams/" + currentTeam).update({ nominationUsed: true });
+    createdAt: Date.now(), bids: {}
+  }).then(function(){
+    db.ref("teams/" + me).update({nominationUsed: true});
     showToast(p.name + " nominated! You lead at $1.00M.");
     showTab("live");
-  }).catch(function(err) {
-    alert("Firebase error: " + err.message);
-  });
-};
+  }).catch(function(e){ alert("Error: " + e.message); });
+}
 
-window.nominatePlayer = function(name, position, salary) {
-  // Called from _doNominate — kept for compatibility but _doNominate does the work
-};
-
-// ── Bidding ──
-window.placeBid = function(auctionId, amount) {
-  var a = auctionData[auctionId];
-  if (!a || a.status !== "active") { showToast("Auction is no longer active."); return; }
-  var td = teamData[currentTeam] || {};
-  if (td.optedOut) { showToast("You've opted out of the auction."); return; }
-  if (a.leader === currentTeam) { showToast("You're already the leader."); return; }
+function doBid(auctionId, amount) {
+  var a = aData[auctionId];
+  if (!a || a.status !== "active") { showToast("Auction no longer active."); return; }
+  var td = tData[me] || {};
+  if (td.optedOut) { showToast("You have opted out."); return; }
+  if (a.leader === me) { showToast("You are already the leader."); return; }
   if (!confirm("Bid " + fmtM(amount) + " on " + a.playerName + "?")) return;
-
-  var timerMs = ((settingsData && settingsData.overbidTimerHours) || 18) * 3600000;
+  var timerMs = (sData.overbidTimerHours || 18) * 3600000;
   var leaderBlind = (a.blindBids && a.leader) ? (a.blindBids[a.leader] || 0) : 0;
-  var finalAmount, finalLeader, toastMsg;
-
+  var finalAmount = amount;
+  var finalLeader = me;
   if (leaderBlind > 0 && leaderBlind >= amount) {
-    // Leader blind covers this bid — leader defends at the bid amount
     finalAmount = amount;
     finalLeader = a.leader;
-    // Silent — bidder sees price didn't change, knows they were outbid
-    finalAmount = amount;
-    finalLeader = a.leader;
-  } else {
-    finalAmount = amount;
-    finalLeader = currentTeam;
   }
+  var upd = {};
+  upd["auctions/" + auctionId + "/currentBid"] = finalAmount;
+  upd["auctions/" + auctionId + "/leader"] = finalLeader;
+  upd["auctions/" + auctionId + "/expiresAt"] = Date.now() + timerMs;
+  upd["auctions/" + auctionId + "/priceLog/" + Date.now()] = {newPrice: finalAmount, ts: Date.now()};
+  db.ref().update(upd).then(function(){
+    if (finalLeader === me) showToast("Bid placed at " + fmtM(finalAmount) + "!");
+  }).catch(function(e){ alert("Error: " + e.message); });
+}
 
-  var updates = {};
-  updates["auctions/" + auctionId + "/currentBid"] = finalAmount;
-  updates["auctions/" + auctionId + "/leader"]     = finalLeader;
-  updates["auctions/" + auctionId + "/expiresAt"]  = Date.now() + timerMs;
-  // Log the bid price increase only (not blind amounts)
-  updates["auctions/" + auctionId + "/priceLog/" + Date.now()] = {
-    newPrice: finalAmount, timestamp: Date.now(), type: "manual"
-  };
-  db.ref().update(updates).then(function() {
-    if (finalLeader === currentTeam) showToast("Bid placed at " + fmtM(finalAmount) + "!");
-    // else silent — bidder sees current bid unchanged
-  }).catch(function(e) { alert("Error: " + e.message); });
-};
-
-  db.ref().update(updates).then(function() {
-    if (finalLeader === currentTeam) {
-      showToast("Bid placed — you're winning at " + fmtM(finalAmount) + "!");
-    } else {
-      showToast("Outbid! " + ((TEAMS[finalLeader] && TEAMS[finalLeader].owner) || finalLeader) + "'s blind max countered at " + fmtM(finalAmount) + ".");
-    }
-  }).catch(function(e) { alert("Error: " + e.message); });
-};
-
-window.setBlind = function(auctionId) {
-  var input = document.getElementById("blind-input-" + auctionId);
+function doSetBlind(auctionId) {
+  var input = document.getElementById("bi-" + auctionId);
   var myBlind = parseMoney(input ? input.value : "");
   if (!myBlind || myBlind < MIN_BID) { showToast("Enter a valid blind max (minimum $1M)."); return; }
-  var a = auctionData[auctionId];
+  var a = aData[auctionId];
   if (!a) return;
   if (!confirm("Set blind max of " + fmtM(myBlind) + " on " + a.playerName + "?")) return;
-
-  var timerMs = ((settingsData && settingsData.overbidTimerHours) || 18) * 3600000;
-  var currentBid = a.currentBid || MIN_BID;
+  var timerMs = (sData.overbidTimerHours || 18) * 3600000;
+  var curBid = a.currentBid || MIN_BID;
   var leader = a.leader;
-  var leaderBlind = (a.blindBids && leader && leader !== currentTeam) ? (a.blindBids[leader] || 0) : 0;
-  var finalAmount, finalLeader, toastMsg;
-
-  if (leader === currentTeam) {
-    // Already leading — update blind, price unchanged
-    finalAmount = currentBid;
-    finalLeader = currentTeam;
-    toastMsg = "Blind updated. You remain the leader.";
-
+  var leaderBlind = (a.blindBids && leader && leader !== me) ? (a.blindBids[leader] || 0) : 0;
+  var finalAmount, finalLeader, msg;
+  if (leader === me) {
+    finalAmount = curBid;
+    finalLeader = me;
+    msg = "Blind updated. You remain the leader.";
   } else if (leaderBlind === 0) {
-    // No competing blind — take lead at currentBid + INCREMENT
-    finalAmount = currentBid + INCREMENT;
-    finalLeader = currentTeam;
-    toastMsg = "Blind set — you're now leading!";
-
+    finalAmount = curBid + INC;
+    finalLeader = me;
+    msg = "Blind set — you're now leading!";
   } else if (myBlind > leaderBlind) {
-    // My blind beats leader blind — I win at leaderBlind + INCREMENT
-    finalAmount = leaderBlind + INCREMENT;
-    finalLeader = currentTeam;
-    toastMsg = "You're now leading!";
-
+    finalAmount = leaderBlind + INC;
+    finalLeader = me;
+    msg = "You're now leading!";
   } else if (myBlind < leaderBlind) {
-    // Leader blind beats mine — leader stays, price = my blind
     finalAmount = myBlind;
     finalLeader = leader;
-    toastMsg = "You've been outbid.";
-
+    msg = "You've been outbid.";
   } else {
-    // Equal blinds — first leader wins
     finalAmount = myBlind;
     finalLeader = leader;
-    toastMsg = "You've been outbid.";
+    msg = "You've been outbid.";
   }
-
-  var updates = {};
-  updates["auctions/" + auctionId + "/blindBids/" + currentTeam] = myBlind;
-  updates["auctions/" + auctionId + "/currentBid"] = finalAmount;
-  updates["auctions/" + auctionId + "/leader"]     = finalLeader;
-  updates["auctions/" + auctionId + "/expiresAt"]  = Date.now() + timerMs;
-  // Log price increase only — never log blind amounts
-  updates["auctions/" + auctionId + "/priceLog/" + Date.now()] = {
-    newPrice: finalAmount, timestamp: Date.now(), type: "blind"
-  };
-  db.ref().update(updates).then(function() {
-    showToast(toastMsg);
+  var upd = {};
+  upd["auctions/" + auctionId + "/blindBids/" + me] = myBlind;
+  upd["auctions/" + auctionId + "/currentBid"] = finalAmount;
+  upd["auctions/" + auctionId + "/leader"] = finalLeader;
+  upd["auctions/" + auctionId + "/expiresAt"] = Date.now() + timerMs;
+  upd["auctions/" + auctionId + "/priceLog/" + Date.now()] = {newPrice: finalAmount, ts: Date.now()};
+  db.ref().update(upd).then(function(){
+    showToast(msg);
     if (input) input.value = "";
-  }).catch(function(e) { alert("Error: " + e.message); });
-};
-
-window.openBlindModal = function(id) {
-  pendingBlindAuctionId = id;
-  const a = auctionData[id];
-  document.getElementById("blind-modal-title").textContent = `Update blind max — ${a?.playerName}`;
-  document.getElementById("blind-modal").classList.add("open");
-};
-window.closeBlindModal = function() { document.getElementById("blind-modal").classList.remove("open"); };
-window.confirmBlind = function() {
-  const val = parseMoney(document.getElementById("blind-modal-input").value);
-  closeBlindModal();
-  if (pendingBlindAuctionId) window.setBlind = window.setBlind; // re-use existing
-  if (pendingBlindAuctionId && val >= MIN_BID) {
-    update(ref(db, `auctions/${pendingBlindAuctionId}/blindBids`), { [currentTeam]: val });
-    showToast(`Blind max updated to ${fmtM(val)}.`);
-  }
-};
-
-// ── Opt-out ──
-window.confirmOptOut = function() {
-  if (!confirm("End your auction? You'll no longer be able to bid or nominate. Commissioner can undo this.")) return;
-  db.ref("teams/" + currentTeam).update({ optedOut: true }).then(function() {
-    showToast("You've opted out of the auction.");
-  });
-};
-
-// ── Commissioner actions ──
-function populateCommissioner() {
-  if (currentTeam !== COMMISSIONER) return;
-  const live = Object.entries(auctionData).filter(([,a])=>a.status==="active");
-  const sold = Object.entries(auctionData).filter(([,a])=>a.status==="sold");
-  const all  = [...live, ...sold];
-  const optedOut = Object.entries(teamData).filter(([,t])=>t.optedOut);
-  const usedNom  = Object.entries(teamData).filter(([k,t])=>t.nominationUsed);
-
-  const sel = (id, opts, placeholder) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.innerHTML = `<option value="">— ${placeholder} —</option>` +
-      opts.map(([v,l])=>`<option value="${v}">${l}</option>`).join("");
-  };
-
-  sel("s-cancel-bid-sel", live.map(([id,a])=>[id,`${a.playerName} (${TEAMS[a.leader]?.owner||"?"} leading ${fmtM(a.currentBid)})`]), "select auction");
-  sel("s-remove-nom-sel", live.map(([id,a])=>[id,`${a.playerName}`]), "select auction");
-  sel("s-reset-slot-sel", usedNom.map(([k])=>[k,TEAMS[k]?.name||k]), "select team");
-  sel("s-undo-optout-sel", optedOut.map(([k])=>[k,TEAMS[k]?.name||k]), "select team");
-  sel("s-force-close-sel", live.map(([id,a])=>[id,`${a.playerName} (${fmtM(a.currentBid)})`]), "select auction");
-  sel("s-history-sel", all.map(([id,a])=>[id,a.playerName]), "select auction");
-
-  const capTeamSel = document.getElementById("s-cap-team");
-  if (capTeamSel) capTeamSel.innerHTML = TEAM_ORDER.map(k=>`<option value="${k}">${TEAMS[k].name}</option>`).join("");
-
-  const isPaused = settingsData.paused;
-  const pb = document.getElementById("s-pause-btn");
-  const pl = document.getElementById("s-pause-label");
-  if (pb) { pb.textContent = isPaused ? "Resume all" : "Pause all"; pb.className = isPaused ? "s-btn save" : "s-btn danger"; }
-  if (pl) pl.textContent = isPaused ? "Auctions are currently paused." : "All timers will freeze until unpaused.";
-
-  const si = document.getElementById("s-timer-initial");
-  const so = document.getElementById("s-timer-overbid");
-  const sc = document.getElementById("s-increment");
-  const sm = document.getElementById("s-min-bid");
-  if (si) si.value = settingsData.initialTimerHours || 18;
-  if (so) so.value = settingsData.overbidTimerHours || 18;
-  if (sc) sc.value = settingsData.increment || 250000;
-  if (sm) sm.value = settingsData.minBid || 1000000;
+  }).catch(function(e){ alert("Error: " + e.message); });
 }
 
-window.saveTimers = function() {
-  db.ref("settings").update({
-    initialTimerHours: parseFloat(document.getElementById("s-timer-initial").value)||18,
-    overbidTimerHours: parseFloat(document.getElementById("s-timer-overbid").value)||18,
-    increment: parseMoney(document.getElementById("s-increment").value)||250000,
-    minBid: parseMoney(document.getElementById("s-min-bid").value)||1000000,
-  }).then(function() { showToast("Timer settings saved."); });
-};
-
-window.saveCapSpace = function() {
-  const team = document.getElementById("s-cap-team").value;
-  const val  = parseMoney(document.getElementById("s-cap-value").value);
-  if (!team || !val) { showToast("Select a team and enter a value."); return; }
-  db.ref("teams/" + team).update({ capSpace: val })
-    .then(function() { showToast((TEAMS[team]?.name||team) + " cap space updated to " + fmtM(val) + "."); });
-};
-
-window.commCancelBid = function() {
-  const id = document.getElementById("s-cancel-bid-sel").value;
-  if (!id) { showToast("Select an auction."); return; }
-  if (!confirm("Cancel the current winning bid? This reopens bidding.")) return;
-  db.ref("auctions/" + id).update({ leader: null, currentBid: 1000000 })
-    .then(function() { showToast("Bid cancelled. Auction reopened."); });
-};
-
-window.commRemoveNom = function() {
-  const id = document.getElementById("s-remove-nom-sel").value;
-  if (!id) { showToast("Select an auction."); return; }
-  const a = auctionData[id];
-  if (!confirm("Remove " + (a ? a.playerName : "this nomination") + " from auction?")) return;
-  db.ref("auctions/" + id).update({ status: "removed" }).then(function() {
-    if (a && a.nominatedBy) db.ref("teams/" + a.nominatedBy).update({ nominationUsed: false });
-    showToast("Nomination removed.");
+function doOptOut() {
+  if (!confirm("End your auction participation? You can still watch but cannot bid or nominate. Commissioner can reverse this.")) return;
+  db.ref("teams/" + me).update({optedOut: true}).then(function(){
+    showToast("You have opted out.");
   });
-};
-
-window.commResetSlot = function() {
-  const team = document.getElementById("s-reset-slot-sel").value;
-  if (!team) { showToast("Select a team."); return; }
-  db.ref("teams/" + team).update({ nominationUsed: false })
-    .then(function() { showToast((TEAMS[team]?.name||team) + " nomination slot reset."); });
-};
-
-window.commUndoOptOut = function() {
-  const team = document.getElementById("s-undo-optout-sel").value;
-  if (!team) { showToast("Select a team."); return; }
-  db.ref("teams/" + team).update({ optedOut: false })
-    .then(function() { showToast((TEAMS[team]?.name||team) + " opt-out reversed."); });
-};
-
-window.commForceClose = function() {
-  const id = document.getElementById("s-force-close-sel").value;
-  if (!id) { showToast("Select an auction."); return; }
-  const a = auctionData[id];
-  if (!a || !a.leader) { showToast("No current leader — cannot force close."); return; }
-  if (!confirm("Award " + a.playerName + " to " + (TEAMS[a.leader]?.owner||a.leader) + " at " + fmtM(a.currentBid) + "?")) return;
-  db.ref("auctions/" + id).update({ status:"sold", winner:a.leader, finalBid:a.currentBid, closedAt:Date.now() })
-    .then(function() {
-      const td = teamData[a.leader] || {};
-      const prevCap = td.capSpace !== undefined ? td.capSpace : getDefaultCap(a.leader);
-      db.ref("teams/" + a.leader).update({ capSpace: prevCap - a.currentBid });
-      showToast(a.playerName + " awarded to " + (TEAMS[a.leader]?.name||a.leader) + ".");
-    });
-};
-
-window.commTogglePause = function() {
-  const isPaused = settingsData.paused;
-  db.ref("settings").update({ paused: !isPaused })
-    .then(function() { showToast(isPaused ? "Auctions resumed." : "All auctions paused."); });
-};
-
-window.commViewHistory = function() {
-  const id = document.getElementById("s-history-sel").value;
-  const logEl = document.getElementById("s-history-log");
-  if (!id || !logEl) return;
-  const a = auctionData[id];
-  const bids = a?.bids ? Object.values(a.bids).sort((a,b)=>a.timestamp-b.timestamp) : [];
-  if (!bids.length) { logEl.textContent = "No bids yet."; return; }
-  logEl.innerHTML = bids.map(b=>{
-    const t = new Date(b.timestamp).toLocaleString();
-    return `<div style="padding:4px 0;border-top:0.5px solid var(--border)">${t} — <strong>${TEAMS[b.team]?.owner||b.team}</strong> bid ${fmtM(b.amount)}</div>`;
-  }).join("");
-};
-
-// ── Modal helpers ──
-function openModal(title, body, onConfirm, isDanger) {
-  document.getElementById("modal-title").textContent = title;
-  document.getElementById("modal-body").innerHTML = body;
-  const btn = document.getElementById("modal-confirm-btn");
-  btn.className = isDanger ? "modal-confirm danger" : "modal-confirm";
-  modalAction = onConfirm;
-  document.getElementById("modal").classList.add("open");
-}
-window.closeModal = function() { document.getElementById("modal").classList.remove("open"); modalAction = null; };
-window.modalConfirm = function() { closeModal(); if (modalAction) modalAction(); };
-
-function showToast(msg, dur=2800) {
-  const t = document.getElementById("toast");
-  t.textContent = msg; t.classList.add("show");
-  setTimeout(()=>t.classList.remove("show"), dur);
 }
 
-// ── Login / nav ──
-window.doLogin = function() {
-  const sel = document.getElementById("login-team-select");
-  const val = sel.value;
-  if (!val) { showToast("Select a team first."); return; }
-  currentTeam = val;
-  const t = TEAMS[val];
-  document.getElementById("user-dot").style.background = t.color;
-  document.getElementById("user-dot").textContent = t.owner.split(" ").map(w=>w[0]).join("").substring(0,2);
-  document.getElementById("user-label").textContent = t.owner;
-  if (val === COMMISSIONER) document.getElementById("commissioner-tab").style.display = "block";
-  else document.getElementById("commissioner-tab").style.display = "none";
-  document.getElementById("screen-login").classList.remove("active");
-  document.getElementById("screen-app").classList.add("active");
-  renderAll();
-  loadFreeAgents();
-  showTab("live");
-};
-
-window.switchTeam = function() {
-  currentTeam = null;
-  clearInterval(window._timerInterval);
-  document.getElementById("screen-app").classList.remove("active");
-  document.getElementById("screen-login").classList.add("active");
-};
-
-window.showTab = function(name) {
-  ["live","nominate","sold","commissioner"].forEach(t=>{
-    const el = document.getElementById("tab-"+t);
-    if (el) el.style.display = t===name ? "block" : "none";
-  });
-  document.querySelectorAll(".nav-tab").forEach(el=>{
-    el.classList.toggle("active", el.textContent.toLowerCase().includes(name)||(name==="commissioner"&&el.textContent.includes("⚙")));
-  });
-  if (name==="nominate") {
-    if (freeAgents.length === 0) {
-      var el = document.getElementById("nom-list");
-      if (el) el.innerHTML = '<div class="nom-empty">Loading free agents…</div>';
-      loadFreeAgents();
-    } else {
-      renderNomList();
-    }
-  }
-  if (name==="commissioner") populateCommissioner();
-};
-
-window.toggleCap = function() {
-  const b = document.getElementById("cap-body");
-  const l = document.getElementById("cap-toggle-lbl");
-  const h = b.style.display === "none";
-  b.style.display = h ? "" : "none";
-  l.textContent = h ? "▲ collapse" : "▼ expand";
-};
-
-// ── Check for expired auctions every 60s ──
-setInterval(function() {
-  if (!currentTeam) return;
-  const now = Date.now();
-  Object.entries(auctionData).forEach(function([id, a]) {
-    if (a.status === "active" && a.expiresAt <= now && !settingsData.paused && a.leader) {
-      var td = teamData[a.leader] || {};
-      var prevCap = td.capSpace !== undefined ? td.capSpace : getDefaultCap(a.leader);
-      var updates = {};
-      updates["auctions/" + id + "/status"]   = "sold";
-      updates["auctions/" + id + "/winner"]   = a.leader;
-      updates["auctions/" + id + "/finalBid"] = a.currentBid;
-      updates["auctions/" + id + "/closedAt"] = now;
-      updates["teams/" + a.leader + "/capSpace"] = prevCap - a.currentBid;
-      db.ref().update(updates);
+// Check expired auctions every 60s
+setInterval(function(){
+  var now = Date.now();
+  Object.entries(aData).forEach(function(entry){
+    var id = entry[0];
+    var a = entry[1];
+    if (a.status === "active" && a.expiresAt <= now && !sData.paused && a.leader) {
+      var td = tData[a.leader] || {};
+      var prevCap = td.capSpace !== undefined ? td.capSpace : (DEFAULT_CAPS[a.leader] || 20000000);
+      var upd = {};
+      upd["auctions/" + id + "/status"] = "sold";
+      upd["auctions/" + id + "/winner"] = a.leader;
+      upd["auctions/" + id + "/finalBid"] = a.currentBid;
+      upd["auctions/" + id + "/closedAt"] = now;
+      upd["teams/" + a.leader + "/capSpace"] = prevCap - a.currentBid;
+      db.ref().update(upd);
     }
   });
 }, 60000);
 
-
-// ── Seed & Commissioner functions ──
-function seedDatabase() {
-  if (!confirm("Seed database? This resets all team cap spaces and clears all auctions.")) return;
-  var updates = {
-    "settings/initialTimerHours": 18, "settings/overbidTimerHours": 18,
-    "settings/increment": 250000, "settings/minBid": 1000000, "settings/paused": false,
-    "teams/CHC/capSpace": 18250000, "teams/CHC/nominationUsed": false, "teams/CHC/optedOut": false,
-    "teams/CIN/capSpace": 22000000, "teams/CIN/nominationUsed": false, "teams/CIN/optedOut": false,
-    "teams/BAL/capSpace": 15500000, "teams/BAL/nominationUsed": false, "teams/BAL/optedOut": false,
-    "teams/KC/capSpace":  31000000, "teams/KC/nominationUsed":  false, "teams/KC/optedOut":  false,
-    "teams/SEA/capSpace": 9750000,  "teams/SEA/nominationUsed": false, "teams/SEA/optedOut": false,
-    "teams/LAD/capSpace": 5500000,  "teams/LAD/nominationUsed": false, "teams/LAD/optedOut": false,
-    "teams/LAA/capSpace": 12000000, "teams/LAA/nominationUsed": false, "teams/LAA/optedOut": false,
-    "teams/TEX/capSpace": 28500000, "teams/TEX/nominationUsed": false, "teams/TEX/optedOut": false,
-    "teams/MIL/capSpace": 41000000, "teams/MIL/nominationUsed": false, "teams/MIL/optedOut": false,
-    "teams/LV/capSpace":  19250000, "teams/LV/nominationUsed":  false, "teams/LV/optedOut":  false,
-    "teams/SD/capSpace":  7000000,  "teams/SD/nominationUsed":  false, "teams/SD/optedOut":  false,
-    "teams/SF/capSpace":  11500000, "teams/SF/nominationUsed":  false, "teams/SF/optedOut":  false,
-    "auctions": null
-  };
-  db.ref().update(updates).then(function() {
-    showToast("Database seeded! All teams initialized.");
-  }).catch(function(e) { alert("Seed error: " + e.message); });
+// Commissioner functions
+function populateCommSettings() {
+  var live = Object.entries(aData).filter(function(e){ return e[1].status === "active"; });
+  var sold = Object.entries(aData).filter(function(e){ return e[1].status === "sold"; });
+  var all = live.concat(sold);
+  var optedOut = Object.entries(tData).filter(function(e){ return e[1].optedOut; });
+  var usedNom = Object.entries(tData).filter(function(e){ return e[1].nominationUsed; });
+  function sel(id, opts, ph) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '<option value="">— ' + ph + ' —</option>' +
+      opts.map(function(o){ return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join("");
+  }
+  sel("s-cancel-sel", live.map(function(e){ return [e[0], e[1].playerName + " (" + (TEAMS[e[1].leader] ? TEAMS[e[1].leader].o : "?") + " leading " + fmtM(e[1].currentBid) + ")"]; }), "select auction");
+  sel("s-remove-sel", live.map(function(e){ return [e[0], e[1].playerName]; }), "select auction");
+  sel("s-reset-sel", usedNom.map(function(e){ return [e[0], TEAMS[e[0]] ? TEAMS[e[0]].n : e[0]]; }), "select team");
+  sel("s-undo-sel", optedOut.map(function(e){ return [e[0], TEAMS[e[0]] ? TEAMS[e[0]].n : e[0]]; }), "select team");
+  sel("s-force-sel", live.map(function(e){ return [e[0], e[1].playerName + " (" + fmtM(e[1].currentBid) + ")"]; }), "select auction");
+  sel("s-hist-sel", all.map(function(e){ return [e[0], e[1].playerName]; }), "select auction");
+  var capSel = document.getElementById("s-cap-team");
+  if (capSel) capSel.innerHTML = TEAM_ORDER.map(function(k){ return '<option value="' + k + '">' + (TEAMS[k] ? TEAMS[k].n : k) + '</option>'; }).join("");
+  var paused = sData.paused;
+  var pb = document.getElementById("s-pause-btn");
+  var pl = document.getElementById("s-pause-lbl");
+  if (pb) { pb.textContent = paused ? "Resume all" : "Pause all"; pb.className = paused ? "s-btn save" : "s-btn danger"; }
+  if (pl) pl.textContent = paused ? "Auctions are currently paused." : "Freeze all timers until unpaused.";
+  var si = document.getElementById("s-init");
+  var so = document.getElementById("s-over");
+  var sc = document.getElementById("s-inc");
+  var sm = document.getElementById("s-min");
+  if (si) si.value = sData.initialTimerHours || 18;
+  if (so) so.value = sData.overbidTimerHours || 18;
+  if (sc) sc.value = sData.increment || 250000;
+  if (sm) sm.value = sData.minBid || 1000000;
 }
 
-function openSeedAuctionModal() {
-  var name = prompt("Player name (e.g. Pete Alonso):");
+function doSeed() {
+  if (!confirm("Seed database? Resets all team cap spaces and clears all auctions.")) return;
+  var upd = {
+    "settings/initialTimerHours":18,"settings/overbidTimerHours":18,
+    "settings/increment":250000,"settings/minBid":1000000,"settings/paused":false,
+    "auctions":null
+  };
+  TEAM_ORDER.forEach(function(k){
+    upd["teams/" + k + "/capSpace"] = DEFAULT_CAPS[k] || 20000000;
+    upd["teams/" + k + "/nominationUsed"] = false;
+    upd["teams/" + k + "/optedOut"] = false;
+  });
+  db.ref().update(upd).then(function(){ showToast("Database seeded!"); }).catch(function(e){ alert(e.message); });
+}
+
+function doAddAuction() {
+  var name = prompt("Player name:");
   if (!name || !name.trim()) return;
   var pos = prompt("Position (e.g. 1B, OF):") || "";
-  var timerMs = ((settingsData && settingsData.initialTimerHours) || 18) * 3600000;
+  var timerMs = ((sData.initialTimerHours || 18) * 3600000);
   db.ref("auctions").push({
-    playerName: name.trim(), position: pos.trim(),
-    nominatedBy: currentTeam, status: "active",
-    currentBid: 1000000, leader: null,
-    expiresAt: Date.now() + timerMs,
-    createdAt: Date.now(), bids: {}
-  }).then(function() {
-    showToast(name.trim() + " auction created!");
-  }).catch(function(e) { alert("Error: " + e.message); });
+    playerName:name.trim(), position:pos.trim(),
+    nominatedBy:me, status:"active",
+    currentBid:1000000, leader:me,
+    expiresAt:Date.now() + timerMs,
+    createdAt:Date.now(), bids:{}
+  }).then(function(){ showToast(name.trim() + " auction created!"); }).catch(function(e){ alert(e.message); });
 }
 
-function clearAuctions() {
-  if (!confirm("Clear ALL auctions? This cannot be undone.")) return;
-  db.ref("auctions").set(null).then(function() {
-    showToast("All auctions cleared.");
-  });
+function doClearAuctions() {
+  if (!confirm("Clear ALL auctions?")) return;
+  db.ref("auctions").set(null).then(function(){ showToast("All auctions cleared."); });
 }
 
-function saveTimers() {
-  db.ref("settings").update({
-    initialTimerHours: parseFloat(document.getElementById("s-timer-initial").value) || 18,
-    overbidTimerHours: parseFloat(document.getElementById("s-timer-overbid").value) || 18,
-    increment: parseMoney(document.getElementById("s-increment").value) || 250000,
-    minBid: parseMoney(document.getElementById("s-min-bid").value) || 1000000
-  }).then(function() { showToast("Timer settings saved."); });
+function doSaveTimers() {
+  var init = parseFloat(document.getElementById("s-init").value) || 18;
+  var over = parseFloat(document.getElementById("s-over").value) || 18;
+  var inc  = parseMoney(document.getElementById("s-inc").value) || 250000;
+  var min  = parseMoney(document.getElementById("s-min").value) || 1000000;
+  db.ref("settings").update({initialTimerHours:init,overbidTimerHours:over,increment:inc,minBid:min})
+    .then(function(){ showToast("Settings saved."); });
 }
 
-function saveCapSpace() {
+function doSaveCap() {
   var team = document.getElementById("s-cap-team").value;
-  var val  = parseMoney(document.getElementById("s-cap-value").value);
+  var val  = parseMoney(document.getElementById("s-cap-val").value);
   if (!team || !val) { showToast("Select a team and enter a value."); return; }
-  db.ref("teams/" + team).update({ capSpace: val }).then(function() {
-    showToast((TEAMS[team] ? TEAMS[team].name : team) + " cap space updated to " + fmtM(val) + ".");
-  });
+  db.ref("teams/" + team).update({capSpace:val})
+    .then(function(){ showToast((TEAMS[team] ? TEAMS[team].n : team) + " cap space updated."); });
 }
 
-function commCancelBid() {
-  var id = document.getElementById("s-cancel-bid-sel").value;
+function doCancelBid() {
+  var id = document.getElementById("s-cancel-sel").value;
   if (!id) { showToast("Select an auction."); return; }
-  if (!confirm("Cancel the current winning bid?")) return;
-  db.ref("auctions/" + id).update({ leader: null, currentBid: 1000000 })
-    .then(function() { showToast("Bid cancelled. Auction reopened."); });
+  if (!confirm("Cancel the current winning bid? Bidding reopens.")) return;
+  db.ref("auctions/" + id).update({leader:null, currentBid:1000000})
+    .then(function(){ showToast("Bid cancelled."); });
 }
 
-function commRemoveNom() {
-  var id = document.getElementById("s-remove-nom-sel").value;
-  var a  = auctionData[id];
+function doRemoveNom() {
+  var id = document.getElementById("s-remove-sel").value;
+  var a = aData[id];
   if (!id || !a) { showToast("Select an auction."); return; }
   if (!confirm("Remove " + a.playerName + " from auction?")) return;
-  db.ref("auctions/" + id).update({ status: "removed" }).then(function() {
-    if (a.nominatedBy) db.ref("teams/" + a.nominatedBy).update({ nominationUsed: false });
+  db.ref("auctions/" + id).update({status:"removed"}).then(function(){
+    if (a.nominatedBy) db.ref("teams/" + a.nominatedBy).update({nominationUsed:false});
     showToast("Nomination removed.");
   });
 }
 
-function commResetSlot() {
-  var team = document.getElementById("s-reset-slot-sel").value;
+function doResetSlot() {
+  var team = document.getElementById("s-reset-sel").value;
   if (!team) { showToast("Select a team."); return; }
-  db.ref("teams/" + team).update({ nominationUsed: false })
-    .then(function() { showToast((TEAMS[team] ? TEAMS[team].name : team) + " nomination slot reset."); });
+  db.ref("teams/" + team).update({nominationUsed:false})
+    .then(function(){ showToast((TEAMS[team] ? TEAMS[team].n : team) + " nomination slot reset."); });
 }
 
-function commUndoOptOut() {
-  var team = document.getElementById("s-undo-optout-sel").value;
+function doUndoOptOut() {
+  var team = document.getElementById("s-undo-sel").value;
   if (!team) { showToast("Select a team."); return; }
-  db.ref("teams/" + team).update({ optedOut: false })
-    .then(function() { showToast((TEAMS[team] ? TEAMS[team].name : team) + " opt-out reversed."); });
+  db.ref("teams/" + team).update({optedOut:false})
+    .then(function(){ showToast((TEAMS[team] ? TEAMS[team].n : team) + " opt-out reversed."); });
 }
 
-function commForceClose() {
-  var id = document.getElementById("s-force-close-sel").value;
-  var a  = auctionData[id];
+function doForceClose() {
+  var id = document.getElementById("s-force-sel").value;
+  var a = aData[id];
   if (!id || !a) { showToast("Select an auction."); return; }
-  if (!a.leader) { showToast("No leader yet — cannot force close."); return; }
-  if (!confirm("Award " + a.playerName + " to " + (TEAMS[a.leader] ? TEAMS[a.leader].owner : a.leader) + " at " + fmtM(a.currentBid) + "?")) return;
-  db.ref("auctions/" + id).update({ status:"sold", winner:a.leader, finalBid:a.currentBid, closedAt:Date.now() })
-    .then(function() {
-      var td = teamData[a.leader] || {};
-      var prevCap = td.capSpace !== undefined ? td.capSpace : getDefaultCap(a.leader);
-      db.ref("teams/" + a.leader).update({ capSpace: prevCap - a.currentBid });
-      showToast(a.playerName + " awarded to " + (TEAMS[a.leader] ? TEAMS[a.leader].name : a.leader) + ".");
+  if (!a.leader) { showToast("No current leader."); return; }
+  if (!confirm("Award " + a.playerName + " to " + (TEAMS[a.leader] ? TEAMS[a.leader].o : a.leader) + " at " + fmtM(a.currentBid) + "?")) return;
+  var td = tData[a.leader] || {};
+  var prevCap = td.capSpace !== undefined ? td.capSpace : (DEFAULT_CAPS[a.leader] || 20000000);
+  db.ref("auctions/" + id).update({status:"sold",winner:a.leader,finalBid:a.currentBid,closedAt:Date.now()})
+    .then(function(){
+      db.ref("teams/" + a.leader).update({capSpace: prevCap - a.currentBid});
+      showToast(a.playerName + " awarded to " + (TEAMS[a.leader] ? TEAMS[a.leader].n : a.leader) + ".");
     });
 }
 
-function commTogglePause() {
-  var isPaused = settingsData.paused;
-  db.ref("settings").update({ paused: !isPaused })
-    .then(function() { showToast(isPaused ? "Auctions resumed." : "All auctions paused."); });
+function doTogglePause() {
+  var paused = sData.paused;
+  db.ref("settings").update({paused:!paused})
+    .then(function(){ showToast(paused ? "Auctions resumed." : "All auctions paused."); });
 }
 
-function commViewHistory() {
-  var id = document.getElementById("s-history-sel").value;
-  var logEl = document.getElementById("s-history-log");
+function doViewHistory() {
+  var id = document.getElementById("s-hist-sel").value;
+  var logEl = document.getElementById("hist-log");
   if (!id || !logEl) return;
-  var a = auctionData[id];
-  var log = a && a.priceLog ? Object.values(a.priceLog).sort(function(x,y){return x.timestamp-y.timestamp;}) : [];
+  var a = aData[id];
+  var log = (a && a.priceLog) ? Object.values(a.priceLog).sort(function(x,y){ return x.ts-y.ts; }) : [];
   if (!log.length) { logEl.textContent = "No price changes yet."; return; }
-  logEl.innerHTML = log.map(function(b) {
-    var t = new Date(b.timestamp).toLocaleString();
-    return '<div style="padding:4px 0;border-top:0.5px solid var(--border)">' + t + ' — price moved to <strong>' + fmtM(b.newPrice) + '</strong></div>';
+  logEl.innerHTML = log.map(function(b){
+    return '<div class="hist-entry">' + new Date(b.ts).toLocaleString() + " &mdash; price moved to <strong>" + fmtM(b.newPrice) + "</strong></div>";
   }).join("");
+}
+
+// Navigation
+function doLogin() {
+  var sel = document.getElementById("login-sel");
+  var val = sel ? sel.value : "";
+  if (!val) { showToast("Select a team first."); return; }
+  me = val;
+  var t = TEAMS[val];
+  var dot = document.getElementById("udot");
+  var lbl = document.getElementById("ulabel");
+  if (dot) { dot.style.background = t.c; dot.textContent = t.o.split(" ").map(function(w){ return w[0]; }).join("").substring(0,2); }
+  if (lbl) lbl.textContent = t.o;
+  var commTab = document.getElementById("comm-tab");
+  if (commTab) commTab.style.display = val === COMM ? "block" : "none";
+  document.getElementById("screen-login").classList.remove("active");
+  document.getElementById("screen-app").classList.add("active");
+  renderAll();
+  loadFA();
+  showTab("live");
+}
+
+function doSwitchTeam() {
+  me = null;
+  clearInterval(window._ti);
+  document.getElementById("screen-app").classList.remove("active");
+  document.getElementById("screen-login").classList.add("active");
+}
+
+function showTab(name) {
+  ["live","nominate","sold","commissioner"].forEach(function(t){
+    var el = document.getElementById("tab-" + t);
+    if (el) el.style.display = t === name ? "block" : "none";
+  });
+  document.querySelectorAll(".nav-tab").forEach(function(el){
+    var matches = el.textContent.toLowerCase().includes(name) ||
+      (name === "commissioner" && el.textContent.includes("Commissioner"));
+    el.classList.toggle("active", matches);
+  });
+  if (name === "nominate") {
+    if (faList.length === 0) {
+      var el = document.getElementById("nom-list");
+      if (el) el.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text3)">Loading...</div>';
+      loadFA();
+    } else {
+      renderNom();
+    }
+  }
+  if (name === "commissioner") populateCommSettings();
+}
+
+function toggleCap() {
+  var b = document.getElementById("cap-body");
+  var t = document.getElementById("cap-tog");
+  var h = b.style.display === "none";
+  b.style.display = h ? "" : "none";
+  t.textContent = h ? "collapse" : "expand";
 }
 </script>
 </body>
